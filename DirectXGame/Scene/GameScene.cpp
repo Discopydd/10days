@@ -1,4 +1,4 @@
-﻿#include "GameScene.h"
+#include "GameScene.h"
 
 #include <algorithm>
 #include <cmath>
@@ -11,7 +11,6 @@ void GameScene::Initialize() {
 	// --------------------------------------------------------
 	// GameScene用モデル
 	// --------------------------------------------------------
-	playerModel_ = Model::CreateSphere(12, 12);
 	blockModel_ = Model::CreateFromOBJ("cube");
 	switchModel_ = Model::CreateFromOBJ("cube");
 	floorModel_ = Model::CreateFromOBJ("cube");
@@ -28,14 +27,9 @@ void GameScene::Initialize() {
 
 	// --------------------------------------------------------
 	// プレイヤー
+	// 移動・描画・当たり判定はPlayerクラス側で管理する
 	// --------------------------------------------------------
-	InitializeTransform(
-		playerWorldTransform_,
-		kPlayerStartPosition_,
-		kPlayerHalfSize_);
-
-	playerColor_.Initialize();
-	playerColor_.SetColor({0.2f, 0.7f, 1.0f, 1.0f});
+	player_.Initialize(kPlayerStartPosition_);
 
 	// --------------------------------------------------------
 	// 移動ブロックギミック
@@ -168,7 +162,7 @@ bool GameScene::Update() {
 	// --------------------------------------------------------
 	if (connectionState_ == ConnectionState::kConnected) {
 		const float distanceToBlock = Collision::Distance(
-			playerWorldTransform_.translation_,
+			player_.GetPosition(),
 			movableBlock_.GetPosition());
 
 		if (distanceToBlock > kDisconnectDistance) {
@@ -183,7 +177,6 @@ bool GameScene::Update() {
 
 	// --------------------------------------------------------
 	// 念のため毎フレーム最後にめり込みを解消する
-	// スナップ直後や浮動小数点誤差による重なりもここで補正する。
 	// --------------------------------------------------------
 	ResolvePlayerGimmickOverlap();
 
@@ -192,15 +185,14 @@ bool GameScene::Update() {
 	// --------------------------------------------------------
 	UpdateRope();
 
-	playerWorldTransform_.UpdateMatarix();
 
 	return true;
 }
 
 void GameScene::Draw() {
-	if (playerModel_ == nullptr || blockModel_ == nullptr ||
-		switchModel_ == nullptr || floorModel_ == nullptr ||
-		wallModel_ == nullptr || ropeModel_ == nullptr) {
+	if (blockModel_ == nullptr || switchModel_ == nullptr ||
+		floorModel_ == nullptr || wallModel_ == nullptr ||
+		ropeModel_ == nullptr) {
 		return;
 	}
 
@@ -225,10 +217,7 @@ void GameScene::Draw() {
 		&switchColor_);
 
 	// プレイヤー
-	playerModel_->Draw(
-		playerWorldTransform_,
-		camera_,
-		&playerColor_);
+	player_.Draw(camera_);
 
 	// 移動ブロックギミック
 	movableBlock_.Draw(camera_);
@@ -243,14 +232,14 @@ void GameScene::Draw() {
 }
 
 void GameScene::Finalize() {
-	delete playerModel_;
+	player_.Finalize();
+
 	delete blockModel_;
 	delete switchModel_;
 	delete floorModel_;
 	delete wallModel_;
 	delete ropeModel_;
 
-	playerModel_ = nullptr;
 	blockModel_ = nullptr;
 	switchModel_ = nullptr;
 	floorModel_ = nullptr;
@@ -272,107 +261,46 @@ void GameScene::InitializeTransform(
 }
 
 Vector3 GameScene::GetPlayerInputMove() const {
-	Vector3 move = {0.0f, 0.0f, 0.0f};
-
-	if (input_->PushKey(DIK_W)) {
-		move.z += kPlayerSpeed;
-	}
-	if (input_->PushKey(DIK_S)) {
-		move.z -= kPlayerSpeed;
-	}
-	if (input_->PushKey(DIK_A)) {
-		move.x -= kPlayerSpeed;
-	}
-	if (input_->PushKey(DIK_D)) {
-		move.x += kPlayerSpeed;
-	}
-
-	return move;
+	// 入力処理はPlayerクラスへ委譲する
+	return player_.GetInputMove();
 }
 
 Vector3 GameScene::MovePlayerWithCollision(
     const Vector3& move,
     bool ignoreGimmickCollision) {
 
-	const Vector3 oldPosition = playerWorldTransform_.translation_;
+	// 通常は移動ブロックも障害物として渡す。
+	// めり込み解消時など、壁だけ確認したい時はnullptrを渡す。
+	Collision::AABB blockAABB = movableBlock_.GetAABB();
+	const Collision::AABB* dynamicObstacle =
+		ignoreGimmickCollision ? nullptr : &blockAABB;
 
-	// --------------------------------------------------------
-	// まずXZをまとめて移動できるか試す。
-	//
-	// 斜め方向へギミックから離れる時に、
-	// Xだけ先に判定して引っ掛かる現象を減らす。
-	// --------------------------------------------------------
-	Vector3 next = {
-		playerWorldTransform_.translation_.x + move.x,
-		playerWorldTransform_.translation_.y,
-		playerWorldTransform_.translation_.z + move.z,
-	};
-
-	if (CanPlayerMoveTo(next, ignoreGimmickCollision)) {
-		playerWorldTransform_.translation_.x = next.x;
-		playerWorldTransform_.translation_.z = next.z;
-	} else {
-		// ----------------------------------------------------
-		// まとめて移動できない場合だけX・Zを分けて試す。
-		// 壁に斜めから当たった時は壁沿いに滑れる。
-		// ----------------------------------------------------
-		next = playerWorldTransform_.translation_;
-		next.x += move.x;
-
-		if (CanPlayerMoveTo(next, ignoreGimmickCollision)) {
-			playerWorldTransform_.translation_.x = next.x;
-		}
-
-		next = playerWorldTransform_.translation_;
-		next.z += move.z;
-
-		if (CanPlayerMoveTo(next, ignoreGimmickCollision)) {
-			playerWorldTransform_.translation_.z = next.z;
-		}
-	}
-
-	playerWorldTransform_.UpdateMatarix();
-
-	return {
-		playerWorldTransform_.translation_.x - oldPosition.x,
-		playerWorldTransform_.translation_.y - oldPosition.y,
-		playerWorldTransform_.translation_.z - oldPosition.z,
-	};
+	return player_.MoveWithCollision(
+		move,
+		wallAABBs_,
+		kWallCount,
+		dynamicObstacle);
 }
 
 bool GameScene::CanPlayerMoveTo(
     const Vector3& position,
     bool ignoreGimmickCollision) const {
 
-	const Collision::AABB playerAABB = GetPlayerAABBAt(position);
+	Collision::AABB blockAABB = movableBlock_.GetAABB();
+	const Collision::AABB* dynamicObstacle =
+		ignoreGimmickCollision ? nullptr : &blockAABB;
 
-	// プレイヤーと壁の当たり判定
-	for (int i = 0; i < kWallCount; ++i) {
-		if (Collision::IsOverlap(playerAABB, wallAABBs_[i])) {
-			return false;
-		}
-	}
-
-	// --------------------------------------------------------
-	// プレイヤーとギミックの当たり判定
-	//
-	// ignoreGimmickCollision は、めり込み解消時に
-	// 壁だけを確認したい場合に使用する。
-	// 通常移動・引き寄せ中は false のまま判定する。
-	// --------------------------------------------------------
-	if (!ignoreGimmickCollision) {
-		if (Collision::IsOverlap(playerAABB, movableBlock_.GetAABB())) {
-			return false;
-		}
-	}
-
-	return true;
+	return player_.CanMoveTo(
+		position,
+		wallAABBs_,
+		kWallCount,
+		dynamicObstacle);
 }
 
 Collision::AABB GameScene::GetPlayerAABBAt(
     const Vector3& position) const {
 
-	return Collision::MakeAABB(position, kPlayerHalfSize_);
+	return player_.GetAABBAt(position);
 }
 
 void GameScene::UpdateConnectedMovement() {
@@ -387,9 +315,9 @@ void GameScene::UpdateConnectedMovement() {
 	}
 
 	Vector3 diff = {
-		movableBlock_.GetPosition().x - playerWorldTransform_.translation_.x,
+		movableBlock_.GetPosition().x - player_.GetPosition().x,
 		0.0f,
-		movableBlock_.GetPosition().z - playerWorldTransform_.translation_.z,
+		movableBlock_.GetPosition().z - player_.GetPosition().z,
 	};
 
 	const float distanceSq =
@@ -446,9 +374,9 @@ void GameScene::UpdateConnectedMovement() {
 
 		// プレイヤー移動後の方向を取り直す
 		diff = {
-			movableBlock_.GetPosition().x - playerWorldTransform_.translation_.x,
+			movableBlock_.GetPosition().x - player_.GetPosition().x,
 			0.0f,
-			movableBlock_.GetPosition().z - playerWorldTransform_.translation_.z,
+			movableBlock_.GetPosition().z - player_.GetPosition().z,
 		};
 
 		const float newDistanceSq =
@@ -488,7 +416,7 @@ void GameScene::UpdateConnectedMovement() {
 
 void GameScene::ResolvePlayerGimmickOverlap() {
 	Collision::AABB playerAABB =
-		GetPlayerAABBAt(playerWorldTransform_.translation_);
+		GetPlayerAABBAt(player_.GetPosition());
 
 	Collision::AABB blockAABB =
 		movableBlock_.GetAABB();
@@ -518,7 +446,7 @@ void GameScene::ResolvePlayerGimmickOverlap() {
 	if (overlapX <= overlapZ) {
 		// プレイヤーがブロックの左なら左へ、右なら右へ戻す
 		const float sign =
-			(playerWorldTransform_.translation_.x <
+			(player_.GetPosition().x <
 			 movableBlock_.GetPosition().x)
 			? -1.0f
 			: 1.0f;
@@ -529,7 +457,7 @@ void GameScene::ResolvePlayerGimmickOverlap() {
 	} else {
 		// プレイヤーがブロックの手前なら手前へ、奥なら奥へ戻す
 		const float sign =
-			(playerWorldTransform_.translation_.z <
+			(player_.GetPosition().z <
 			 movableBlock_.GetPosition().z)
 			? -1.0f
 			: 1.0f;
@@ -543,16 +471,13 @@ void GameScene::ResolvePlayerGimmickOverlap() {
 	// 壁に邪魔されて押し戻せない時だけブロック側を逆へ逃がす。
 	// --------------------------------------------------------
 	const Vector3 correctedPlayerPosition = {
-		playerWorldTransform_.translation_.x + correction.x,
-		playerWorldTransform_.translation_.y,
-		playerWorldTransform_.translation_.z + correction.z,
+		player_.GetPosition().x + correction.x,
+		player_.GetPosition().y,
+		player_.GetPosition().z + correction.z,
 	};
 
 	if (CanPlayerMoveTo(correctedPlayerPosition, true)) {
-		playerWorldTransform_.translation_ =
-			correctedPlayerPosition;
-
-		playerWorldTransform_.UpdateMatarix();
+		player_.SetPosition(correctedPlayerPosition);
 		return;
 	}
 
@@ -583,7 +508,7 @@ void GameScene::UpdateConnectionInput() {
 	}
 
 	const float distanceToBlock = Collision::Distance(
-		playerWorldTransform_.translation_,
+		player_.GetPosition(),
 		movableBlock_.GetPosition());
 
 	// 接続可能距離内なら糸の射出を開始する
@@ -611,7 +536,7 @@ void GameScene::UpdateRopeShot() {
 }
 
 void GameScene::UpdatePullTogether() {
-	Vector3 playerPosition = playerWorldTransform_.translation_;
+	Vector3 playerPosition = player_.GetPosition();
 	Vector3 blockPosition = movableBlock_.GetPosition();
 
 	Vector3 diff = {
@@ -679,7 +604,7 @@ void GameScene::UpdatePullTogether() {
 	// --------------------------------------------------------
 	// ギミック移動後の距離を再計算する
 	// --------------------------------------------------------
-	playerPosition = playerWorldTransform_.translation_;
+	playerPosition = player_.GetPosition();
 	blockPosition = movableBlock_.GetPosition();
 
 	diff = {
@@ -726,7 +651,7 @@ void GameScene::UpdatePullTogether() {
 	// --------------------------------------------------------
 	// 接続完了判定
 	// --------------------------------------------------------
-	playerPosition = playerWorldTransform_.translation_;
+	playerPosition = player_.GetPosition();
 	blockPosition = movableBlock_.GetPosition();
 
 	diff = {
@@ -762,10 +687,11 @@ void GameScene::UpdatePullTogether() {
 float GameScene::CalculateContactDistanceXZ(
     const Vector3& direction) const {
 
+	const Vector3& playerHalfSize = player_.GetHalfSize();
 	const Vector3& blockHalfSize = movableBlock_.GetHalfSize();
 
-	const float sumHalfX = kPlayerHalfSize_.x + blockHalfSize.x;
-	const float sumHalfZ = kPlayerHalfSize_.z + blockHalfSize.z;
+	const float sumHalfX = playerHalfSize.x + blockHalfSize.x;
+	const float sumHalfZ = playerHalfSize.z + blockHalfSize.z;
 
 	const float absX = std::abs(direction.x);
 	const float absZ = std::abs(direction.z);
@@ -831,7 +757,7 @@ void GameScene::UpdateRope() {
 		return;
 	}
 
-	const Vector3 start = playerWorldTransform_.translation_;
+	const Vector3 start = player_.GetPosition();
 	const Vector3 target = movableBlock_.GetPosition();
 
 	Vector3 end = target;
@@ -898,13 +824,9 @@ void GameScene::SetRopeTransform(
 }
 
 void GameScene::ResetGame() {
-	playerWorldTransform_.translation_ =
-		kPlayerStartPosition_;
-
+	player_.Reset(kPlayerStartPosition_);
 	movableBlock_.Reset(kBlockStartPosition_);
 
 	connectionState_ = ConnectionState::kIdle;
 	ropeShootProgress_ = 0.0f;
-
-	playerWorldTransform_.UpdateMatarix();
 }

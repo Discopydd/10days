@@ -4,6 +4,7 @@
 
 #include "../Common/Collision.h"
 #include "../Gimmick/MovableBlockGimmick.h"
+#include "../Player/Player.h"
 
 // ============================================================
 class GameScene {
@@ -37,20 +38,20 @@ private:
 	    const KamataEngine::Vector3& position,
 	    const KamataEngine::Vector3& scale);
 
-	// 入力からプレイヤーの移動量を作る
+	// Playerクラスから入力移動量を受け取る
 	KamataEngine::Vector3 GetPlayerInputMove() const;
 
-	// プレイヤーを当たり判定付きで移動する
+	// Playerクラスへ当たり判定付き移動を依頼する
 	KamataEngine::Vector3 MovePlayerWithCollision(
 	    const KamataEngine::Vector3& move,
 	    bool ignoreGimmickCollision = false);
 
-	// 指定位置へプレイヤーが移動できるか判定する
+	// Playerクラスへ移動可能判定を依頼する
 	bool CanPlayerMoveTo(
 	    const KamataEngine::Vector3& position,
 	    bool ignoreGimmickCollision) const;
 
-	// 現在のプレイヤーAABBを取得する
+	// 指定位置のPlayer AABBを取得する
 	Collision::AABB GetPlayerAABBAt(
 	    const KamataEngine::Vector3& position) const;
 
@@ -93,8 +94,14 @@ private:
 private:
 	KamataEngine::Input* input_ = nullptr;
 
-	// 描画確認を確実にするため、オブジェクトごとにモデルを分ける
-	KamataEngine::Model* playerModel_ = nullptr;
+	// --------------------------------------------------------
+	// プレイヤー
+	// --------------------------------------------------------
+	Player player_;
+
+	// --------------------------------------------------------
+	// GameScene側で管理するモデル
+	// --------------------------------------------------------
 	KamataEngine::Model* blockModel_ = nullptr;
 	KamataEngine::Model* switchModel_ = nullptr;
 	KamataEngine::Model* floorModel_ = nullptr;
@@ -102,13 +109,6 @@ private:
 	KamataEngine::Model* ropeModel_ = nullptr;
 
 	KamataEngine::Camera camera_;
-
-	// --------------------------------------------------------
-	// プレイヤー
-	// --------------------------------------------------------
-	KamataEngine::WorldTransform playerWorldTransform_;
-	KamataEngine::ObjectColor playerColor_;
-	const KamataEngine::Vector3 kPlayerHalfSize_ = {0.6f, 0.6f, 0.6f};
 
 	// --------------------------------------------------------
 	// 移動ブロックギミック
@@ -150,7 +150,6 @@ private:
 	// --------------------------------------------------------
 	// GameScene用定数
 	// --------------------------------------------------------
-	static constexpr float kPlayerSpeed = 0.10f;
 	static constexpr float kConnectDistance = 5.0f;
 	static constexpr float kDisconnectDistance = 7.0f;
 

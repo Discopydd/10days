@@ -16,6 +16,9 @@
     <Filter Include="Scene">
       <UniqueIdentifier>{D4F39220-6E6B-4D9D-9C35-5E0F8024CC9B}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Player">
+      <UniqueIdentifier>{A6B9D779-2E5C-4F43-B83C-71C71AA4A6F1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -26,6 +29,9 @@
     </ClCompile>
     <ClCompile Include="Scene\GameScene.cpp">
       <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Player\Player.cpp">
+      <Filter>Player</Filter>
     </ClCompile>
     <ClCompile Include="WorldTransformEx.cpp">
       <Filter>ソース ファイル</Filter>
@@ -40,6 +46,9 @@
     </ClInclude>
     <ClInclude Include="Scene\GameScene.h">
       <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Player\Player.h">
+      <Filter>Player</Filter>
     </ClInclude>
     <ClInclude Include="math.h">
       <Filter>ヘッダー ファイル</Filter>
