@@ -884,14 +884,42 @@ void GameScene::UpdateSwitch() {
 			continue;
 		}
 
-		// ----------------------------------------------------
-		// Blockをスイッチ中央へ固定
-		// ----------------------------------------------------
-		movableBlocks_[i]->SnapAndLock({
+		const Vector3 snapPosition = {
 			kSwitchPosition_.x,
 			1.2f,
 			kSwitchPosition_.z,
-		});
+		};
+
+		const Collision::AABB snapAABB = Collision::MakeAABB(
+			snapPosition,
+			movableBlocks_[i]->GetHalfSize());
+
+		// スナップ先にPlayerがいる場合は、Playerが離れるまで固定しない
+		if (Collision::IsOverlap(player_->GetAABB(), snapAABB)) {
+			continue;
+		}
+
+		// スナップ先に別のBlockがある場合も固定しない
+		bool canSnap = true;
+		for (int j = 0; j < kBlockCount; ++j) {
+			if (j == i) {
+				continue;
+			}
+
+			if (Collision::IsOverlap(snapAABB, movableBlocks_[j]->GetAABB())) {
+				canSnap = false;
+				break;
+			}
+		}
+
+		if (!canSnap) {
+			continue;
+		}
+
+		// ----------------------------------------------------
+		// Blockをスイッチ中央へ固定
+		// ----------------------------------------------------
+		movableBlocks_[i]->SnapAndLock(snapPosition);
 
 		switchActivated_ = true;
 		switchColor_.SetColor({1.0f, 0.85f, 0.15f, 1.0f});
