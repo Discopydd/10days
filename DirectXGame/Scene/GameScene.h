@@ -4,21 +4,24 @@
 
 #include "../Common/Collision.h"
 #include "../Gimmick/MovableBlockGimmick.h"
+#include "../Gimmick/SwitchDoorGimmick.h"
 #include "../Player/Player.h"
 
 // ============================================================
+// 1ステージ分のゲームシーン
+//
+// ステージ構成：
+// ・中央の壁の向こう側にGOAL
+// ・中央の通路には閉じたドア
+// ・ドアの手前を3個の移動ブロックが塞いでいる
+// ・右上のスイッチへ1個のブロックを置くとドアが開く
+// ・残り2個のブロックをどかして通路を通り、GOALへ到達する
+// ============================================================
 class GameScene {
 public:
-	// リソース・オブジェクトの初期化
 	void Initialize();
-
-	// 毎フレーム更新
 	bool Update();
-
-	// 3Dオブジェクト描画
 	void Draw();
-
-	// 終了処理
 	void Finalize();
 
 private:
@@ -26,94 +29,100 @@ private:
 	// 接続状態
 	// --------------------------------------------------------
 	enum class ConnectionState {
-		kIdle,      // 未接続
-		kShooting,  // 糸を発射中
-		kPulling,   // 糸が命中し、互いに引き寄せ中
-		kConnected, // 接続完了
+		kIdle,
+		kShooting,
+		kPulling,
+		kConnected,
 	};
 
-	// WorldTransform初期化補助
 	void InitializeTransform(
 	    KamataEngine::WorldTransform& worldTransform,
 	    const KamataEngine::Vector3& position,
 	    const KamataEngine::Vector3& scale);
 
-	// Playerクラスから入力移動量を受け取る
+	// --------------------------------------------------------
+	// Player
+	// --------------------------------------------------------
 	KamataEngine::Vector3 GetPlayerInputMove() const;
 
-	// Playerクラスへ当たり判定付き移動を依頼する
 	KamataEngine::Vector3 MovePlayerWithCollision(
 	    const KamataEngine::Vector3& move,
-	    bool ignoreGimmickCollision = false);
+	    int ignoreBlockIndex = -1);
 
-	// Playerクラスへ移動可能判定を依頼する
 	bool CanPlayerMoveTo(
 	    const KamataEngine::Vector3& position,
-	    bool ignoreGimmickCollision) const;
+	    int ignoreBlockIndex = -1) const;
 
-	// 指定位置のPlayer AABBを取得する
 	Collision::AABB GetPlayerAABBAt(
 	    const KamataEngine::Vector3& position) const;
 
-	// 接続中の押す／引く移動を更新する
+	int BuildPlayerObstacleList(
+	    Collision::AABB* outObstacles,
+	    int maxCount,
+	    int ignoreBlockIndex = -1) const;
+
+	// --------------------------------------------------------
+	// Block
+	// --------------------------------------------------------
+	MovableBlockGimmick* GetActiveBlock();
+	const MovableBlockGimmick* GetActiveBlock() const;
+
+	int FindNearestConnectableBlock() const;
+
+	KamataEngine::Vector3 MoveBlockWithCollision(
+	    int blockIndex,
+	    const KamataEngine::Vector3& move);
+
 	void UpdateConnectedMovement();
+	void ResolvePlayerBlockOverlap(int blockIndex);
 
-	// プレイヤーとギミックが重なった場合に押し戻して解消する
-	void ResolvePlayerGimmickOverlap();
-
-	// Eキーによる接続開始／解除
+	// --------------------------------------------------------
+	// 接続・糸
+	// --------------------------------------------------------
 	void UpdateConnectionInput();
-
-	// 糸の射出アニメーションを更新する
 	void UpdateRopeShot();
-
-	// 命中後、プレイヤーとギミックを互いに引き寄せる
 	void UpdatePullTogether();
 
-	// プレイヤーとブロックが接触する中心間距離を求める
 	float CalculateContactDistanceXZ(
 	    const KamataEngine::Vector3& direction) const;
 
-	// 接続状態を解除して通常状態へ戻す
 	void CancelConnection();
-
-	// スイッチへ置かれたか判定する
-	void UpdateSwitch();
-
-	// 糸の見た目を更新する
 	void UpdateRope();
 
-	// 2点間へ糸モデルを配置する
 	void SetRopeTransform(
 	    const KamataEngine::Vector3& start,
 	    const KamataEngine::Vector3& end);
 
-	// RキーでGameScene全体を初期状態へ戻す
+	// --------------------------------------------------------
+	// ステージギミック
+	// --------------------------------------------------------
+	void UpdateSwitch();
+	void UpdateGoal();
 	void ResetGame();
 
 private:
 	KamataEngine::Input* input_ = nullptr;
 
-	// --------------------------------------------------------
-	// プレイヤー
-	// --------------------------------------------------------
 	Player player_;
+	KamataEngine::Camera camera_;
 
 	// --------------------------------------------------------
-	// GameScene側で管理するモデル
+	// モデル
 	// --------------------------------------------------------
 	KamataEngine::Model* blockModel_ = nullptr;
 	KamataEngine::Model* switchModel_ = nullptr;
+	KamataEngine::Model* doorModel_ = nullptr;
+	KamataEngine::Model* goalModel_ = nullptr;
 	KamataEngine::Model* floorModel_ = nullptr;
 	KamataEngine::Model* wallModel_ = nullptr;
 	KamataEngine::Model* ropeModel_ = nullptr;
 
-	KamataEngine::Camera camera_;
-
 	// --------------------------------------------------------
-	// 移動ブロックギミック
+	// 移動ブロック3個
 	// --------------------------------------------------------
-	MovableBlockGimmick movableBlock_;
+	static constexpr int kBlockCount = 3;
+	MovableBlockGimmick movableBlocks_[kBlockCount];
+	int activeBlockIndex_ = -1;
 
 	// --------------------------------------------------------
 	// スイッチ
@@ -121,6 +130,20 @@ private:
 	KamataEngine::WorldTransform switchWorldTransform_;
 	KamataEngine::ObjectColor switchColor_;
 	Collision::AABB switchAABB_{};
+	bool switchActivated_ = false;
+
+	// --------------------------------------------------------
+	// ドア
+	// --------------------------------------------------------
+	SwitchDoorGimmick door_;
+
+	// --------------------------------------------------------
+	// GOAL
+	// --------------------------------------------------------
+	KamataEngine::WorldTransform goalWorldTransform_;
+	KamataEngine::ObjectColor goalColor_;
+	Collision::AABB goalAABB_{};
+	bool isClear_ = false;
 
 	// --------------------------------------------------------
 	// 床
@@ -129,9 +152,9 @@ private:
 	KamataEngine::ObjectColor floorColor_;
 
 	// --------------------------------------------------------
-	// 壁4枚
+	// 外壁4枚 + 中央仕切り壁2枚
 	// --------------------------------------------------------
-	static constexpr int kWallCount = 4;
+	static constexpr int kWallCount = 6;
 	KamataEngine::WorldTransform wallWorldTransforms_[kWallCount];
 	Collision::AABB wallAABBs_[kWallCount]{};
 	KamataEngine::ObjectColor wallColor_;
@@ -141,30 +164,37 @@ private:
 	// --------------------------------------------------------
 	KamataEngine::WorldTransform ropeWorldTransform_;
 	KamataEngine::ObjectColor ropeColor_;
-
 	ConnectionState connectionState_ = ConnectionState::kIdle;
-
-	// 0.0～1.0 : 糸の射出進行度
 	float ropeShootProgress_ = 0.0f;
 
 	// --------------------------------------------------------
-	// GameScene用定数
+	// 定数
 	// --------------------------------------------------------
+	static constexpr int kMaxPlayerObstacles = 16;
 	static constexpr float kConnectDistance = 5.0f;
 	static constexpr float kDisconnectDistance = 7.0f;
-
-	// 約12～13フレームでターゲットへ到達する
 	static constexpr float kRopeShootProgressPerFrame = 0.08f;
-
-	// 命中後、1フレームに各オブジェクトが近づく最大量
 	static constexpr float kPullSpeedPerFrame = 0.08f;
-
-	// プレイヤーとブロックを完全密着させず、
-	// 浮動小数点誤差によるめり込みを防ぐための僅かな隙間
 	static constexpr float kPlayerBlockSkin = 0.03f;
 
-	const KamataEngine::Vector3 kPlayerStartPosition_ = {-4.0f, 0.6f, 0.0f};
-	const KamataEngine::Vector3 kBlockStartPosition_ = {0.0f, 1.0f, 0.0f};
-	const KamataEngine::Vector3 kSwitchPosition_ = {4.0f, 0.10f, 0.0f};
-	const KamataEngine::Vector3 kSwitchScale_ = {1.6f, 0.10f, 1.6f};
+	const KamataEngine::Vector3 kPlayerStartPosition_ = {0.0f, 0.6f, -7.0f};
+
+	// 3個を縦に並べ、中央通路への進路を塞ぐ
+	const KamataEngine::Vector3 kBlockStartPositions_[kBlockCount] = {
+		{0.0f, 1.0f, -2.0f},
+		{0.0f, 1.0f, 0.1f},
+		{0.0f, 1.0f, 2.2f},
+	};
+
+	// 画面右上寄り。ドア手前なので、閉じていても到達可能
+	const KamataEngine::Vector3 kSwitchPosition_ = {4.7f, 0.10f, 2.1f};
+	const KamataEngine::Vector3 kSwitchScale_ = {1.35f, 0.10f, 1.35f};
+
+	// 中央の仕切り壁にある通路を塞ぐドア
+	const KamataEngine::Vector3 kDoorPosition_ = {0.0f, 1.5f, 4.0f};
+	const KamataEngine::Vector3 kDoorScale_ = {1.4f, 1.5f, 0.45f};
+
+	// 壁の向こう側にあるクリア地点
+	const KamataEngine::Vector3 kGoalPosition_ = {0.0f, 0.10f, 7.6f};
+	const KamataEngine::Vector3 kGoalScale_ = {1.8f, 0.10f, 1.25f};
 };

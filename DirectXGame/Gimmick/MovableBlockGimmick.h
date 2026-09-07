@@ -86,7 +86,7 @@ private:
 	// スイッチへ置いた後など、固定中は移動できない
 	bool isLocked_ = false;
 
-	static constexpr int kMaxObstacles = 8;
+	static constexpr int kMaxObstacles = 16;
 	Collision::AABB obstacles_[kMaxObstacles]{};
 	int obstacleCount_ = 0;
 };
