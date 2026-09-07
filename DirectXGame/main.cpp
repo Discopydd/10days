@@ -1,7 +1,7 @@
 #include <KamataEngine.h>
 #include <Windows.h>
 
-#include "Scene/GameScene.h"
+#include "Demo/SwingDemoScene.h"
 
 using namespace KamataEngine;
 
@@ -21,8 +21,8 @@ int WINAPI WinMain(
 	DirectXCommon* dxCommon =
 		DirectXCommon::GetInstance();
 
-	// GameScene初期化
-	GameScene scene;
+	// ギミック確認用シーン初期化
+	SwingDemoScene scene;
 	scene.Initialize();
 
 	// ========================================================
@@ -34,7 +34,7 @@ int WINAPI WinMain(
 			break;
 		}
 
-		// GameScene更新
+		// ギミック確認用シーン更新
 		if (!scene.Update()) {
 			break;
 		}
