@@ -80,7 +80,7 @@ void SwingDemoScene::Initialize() {
 
 	goalAABB_ = Collision::MakeAABB(
 		kGoalPosition_,
-		kGoalScale_);
+		kGoalTriggerHalfSize_);
 
 	InitializeTransform(
 		ropeTransform_,
@@ -106,8 +106,11 @@ void SwingDemoScene::Initialize() {
 	settings.connectDistance = 7.2f;
 	settings.ropeLength = 5.8f;
 	settings.gravity = kGravity;
-	settings.swingAssist = 5.0f;
-	settings.maxSpeed = 18.0f;
+	settings.swingAssist = 7.0f;
+	settings.maxSpeed = 16.0f;
+	settings.activeDamping = 0.08f;
+	settings.idleDamping = 0.42f;
+	settings.stopSpeed = 0.22f;
 	anchorSwing_->Initialize(settings);
 
 	ResetDemo();
@@ -248,6 +251,7 @@ void SwingDemoScene::UpdatePlayer() {
 	}
 
 	Vector3 playerPosition = player_->GetPosition();
+	const Vector3 previousPosition = playerPosition;
 	const Vector3 moveVelocity = GetPlayerMoveVelocity();
 
 	if (anchorSwing_->IsConnected()) {
@@ -257,13 +261,17 @@ void SwingDemoScene::UpdatePlayer() {
 			moveVelocity,
 			kDeltaTime);
 	} else {
+		float standingY = 0.0f;
+		const bool hasStandingFloor =
+			GetStandingY(playerPosition, standingY);
+
 		const bool isGrounded =
-			IsOnFloor(playerPosition) &&
-			playerPosition.y <= kFloorHeight + 0.001f &&
+			hasStandingFloor &&
+			std::abs(playerPosition.y - standingY) <= kGroundTolerance &&
 			playerVelocity_.y <= 0.0f;
 
 		if (isGrounded) {
-			playerPosition.y = kFloorHeight;
+			playerPosition.y = standingY;
 			playerVelocity_.y = 0.0f;
 
 			const Vector3 frameMove = player_->GetInputMove();
@@ -287,6 +295,10 @@ void SwingDemoScene::UpdatePlayer() {
 					kAirControlAcceleration * kDeltaTime;
 			}
 
+			const float airDamping = std::exp(-kAirDamping * kDeltaTime);
+			playerVelocity_.x *= airDamping;
+			playerVelocity_.z *= airDamping;
+
 			const float horizontalSpeed = std::sqrt(
 				playerVelocity_.x * playerVelocity_.x +
 				playerVelocity_.z * playerVelocity_.z);
@@ -305,13 +317,11 @@ void SwingDemoScene::UpdatePlayer() {
 		}
 	}
 
-	if (IsOnFloor(playerPosition) &&
-		playerPosition.y < kFloorHeight) {
-		playerPosition.y = kFloorHeight;
+	const bool landed =
+		ResolveFloorLanding(previousPosition, playerPosition);
 
-		if (playerVelocity_.y < 0.0f) {
-			playerVelocity_.y = 0.0f;
-		}
+	if (landed && anchorSwing_->IsConnected()) {
+		anchorSwing_->Disconnect();
 	}
 
 	ApplyStageBounds(playerPosition);
@@ -394,14 +404,11 @@ void SwingDemoScene::UpdateAnchorColor() {
 }
 
 void SwingDemoScene::UpdateGoal() {
-	if (player_ == nullptr || isClear_) {
+	if (player_ == nullptr || anchorSwing_ == nullptr || isClear_) {
 		return;
 	}
 
-	if (Collision::IsOverlap(
-			player_->GetAABB(),
-			goalAABB_)) {
-
+	if (IsPlayerInsideGoal()) {
 		isClear_ = true;
 		anchorSwing_->Disconnect();
 		playerVelocity_ = {};
@@ -411,60 +418,158 @@ void SwingDemoScene::UpdateGoal() {
 }
 
 void SwingDemoScene::ApplyStageBounds(Vector3& position) {
-	if (position.x < kStageMinX) {
-		position.x = kStageMinX;
+	if (player_ == nullptr) {
+		return;
+	}
+
+	const Vector3& halfSize = player_->GetHalfSize();
+	const float minX = kStageMinX + halfSize.x;
+	const float maxX = kStageMaxX - halfSize.x;
+	const float minZ = kStageMinZ + halfSize.z;
+	const float maxZ = kStageMaxZ - halfSize.z;
+	const float maxY = kStageMaxY - halfSize.y;
+
+	if (position.x < minX) {
+		position.x = minX;
 		if (playerVelocity_.x < 0.0f) {
 			playerVelocity_.x = 0.0f;
 		}
 	}
 
-	if (position.x > kStageMaxX) {
-		position.x = kStageMaxX;
+	if (position.x > maxX) {
+		position.x = maxX;
 		if (playerVelocity_.x > 0.0f) {
 			playerVelocity_.x = 0.0f;
 		}
 	}
 
-	if (position.z < kStageMinZ) {
-		position.z = kStageMinZ;
+	if (position.z < minZ) {
+		position.z = minZ;
 		if (playerVelocity_.z < 0.0f) {
 			playerVelocity_.z = 0.0f;
 		}
 	}
 
-	if (position.z > kStageMaxZ) {
-		position.z = kStageMaxZ;
+	if (position.z > maxZ) {
+		position.z = maxZ;
 		if (playerVelocity_.z > 0.0f) {
 			playerVelocity_.z = 0.0f;
 		}
 	}
 
-	if (position.y > kStageMaxY) {
-		position.y = kStageMaxY;
+	if (position.y > maxY) {
+		position.y = maxY;
 		if (playerVelocity_.y > 0.0f) {
 			playerVelocity_.y = 0.0f;
 		}
 	}
-
 }
 
-bool SwingDemoScene::IsOnFloor(const Vector3& position) const {
+bool SwingDemoScene::HasFloorSupportXZ(
+    const Vector3& position,
+    const Collision::AABB& floorAABB) const {
+
 	if (player_ == nullptr) {
 		return false;
 	}
 
 	const Collision::AABB playerAABB =
-		player_->GetAABBAt({position.x, kFloorHeight, position.z});
+		player_->GetAABBAt({position.x, position.y, position.z});
+
+	const float overlapX =
+		(std::min)(playerAABB.max.x, floorAABB.max.x) -
+		(std::max)(playerAABB.min.x, floorAABB.min.x);
+
+	const float overlapZ =
+		(std::min)(playerAABB.max.z, floorAABB.max.z) -
+		(std::max)(playerAABB.min.z, floorAABB.min.z);
+
+	return overlapX >= kMinFloorSupport &&
+		overlapZ >= kMinFloorSupport;
+}
+
+bool SwingDemoScene::GetStandingY(
+    const Vector3& position,
+    float& standingY) const {
+
+	if (player_ == nullptr) {
+		return false;
+	}
+
+	bool foundFloor = false;
+	float highestStandingY = -100000.0f;
+	const float playerHalfY = player_->GetHalfSize().y;
 
 	for (int i = 0; i < kFloorCount; ++i) {
-		if (Collision::IsOverlapXZ(
-				playerAABB,
-				floorAABBs_[i])) {
+		if (!HasFloorSupportXZ(position, floorAABBs_[i])) {
+			continue;
+		}
+
+		const float candidateY =
+			floorAABBs_[i].max.y + playerHalfY;
+
+		if (!foundFloor || candidateY > highestStandingY) {
+			highestStandingY = candidateY;
+			foundFloor = true;
+		}
+	}
+
+	if (foundFloor) {
+		standingY = highestStandingY;
+	}
+
+	return foundFloor;
+}
+
+bool SwingDemoScene::ResolveFloorLanding(
+    const Vector3& previousPosition,
+    Vector3& position) {
+
+	if (player_ == nullptr || playerVelocity_.y > 0.0f) {
+		return false;
+	}
+
+	const float playerHalfY = player_->GetHalfSize().y;
+
+	for (int i = 0; i < kFloorCount; ++i) {
+		if (!HasFloorSupportXZ(position, floorAABBs_[i])) {
+			continue;
+		}
+
+		const float floorTop = floorAABBs_[i].max.y;
+		const float standingY = floorTop + playerHalfY;
+		const float previousBottom = previousPosition.y - playerHalfY;
+		const float currentBottom = position.y - playerHalfY;
+
+		const bool wasAboveFloor =
+			previousBottom >= floorTop - kGroundTolerance;
+		const bool reachedFloor =
+			currentBottom <= floorTop + kGroundTolerance;
+
+		if (wasAboveFloor && reachedFloor) {
+			position.y = standingY;
+			playerVelocity_.y = 0.0f;
 			return true;
 		}
 	}
 
 	return false;
+}
+
+bool SwingDemoScene::IsPlayerInsideGoal() const {
+	if (player_ == nullptr) {
+		return false;
+	}
+
+	const Vector3& position = player_->GetPosition();
+
+	return
+		position.x >= goalAABB_.min.x &&
+		position.x <= goalAABB_.max.x &&
+		position.y >= goalAABB_.min.y &&
+		position.y <= goalAABB_.max.y &&
+		position.z >= goalAABB_.min.z &&
+		position.z <= goalAABB_.max.z;
 }
 
 void SwingDemoScene::ResetPlayerAfterFall(

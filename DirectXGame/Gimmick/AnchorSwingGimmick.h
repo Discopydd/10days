@@ -14,8 +14,11 @@ public:
 		float connectDistance = 8.0f;
 		float ropeLength = 7.0f;
 		float gravity = 19.6f;
-		float swingAssist = 4.0f;
-		float maxSpeed = 30.0f;
+		float swingAssist = 6.0f;
+		float maxSpeed = 24.0f;
+		float activeDamping = 0.08f;
+		float idleDamping = 0.40f;
+		float stopSpeed = 0.20f;
 	};
 
 	void Initialize(const Settings& settings = Settings{});

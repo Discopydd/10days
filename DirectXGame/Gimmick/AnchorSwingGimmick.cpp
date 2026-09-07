@@ -7,6 +7,7 @@ using namespace KamataEngine;
 
 namespace {
 constexpr float kEpsilon = 0.000001f;
+constexpr float kRestDirectionY = -0.995f;
 
 float LengthSquared(const Vector3& value) {
 	return value.x * value.x +
@@ -97,8 +98,12 @@ void AnchorSwingGimmick::Update(
 	};
 
 	const float ropeLengthSq = LengthSquared(rope);
+	const float inputLengthSq =
+		playerMoveVelocity.x * playerMoveVelocity.x +
+		playerMoveVelocity.z * playerMoveVelocity.z;
+	const bool hasMoveInput = inputLengthSq > kEpsilon;
 
-	if (ropeLengthSq > kEpsilon) {
+	if (ropeLengthSq > kEpsilon && hasMoveInput) {
 		const float inverseLength =
 			1.0f / std::sqrt(ropeLengthSq);
 
@@ -114,12 +119,19 @@ void AnchorSwingGimmick::Update(
 			playerMoveVelocity.z - ropeDirection.z * radialMove,
 		};
 
-		playerVelocity.x +=
-			tangentMove.x * settings_.swingAssist * deltaTime;
-		playerVelocity.y +=
-			tangentMove.y * settings_.swingAssist * deltaTime;
-		playerVelocity.z +=
-			tangentMove.z * settings_.swingAssist * deltaTime;
+		const float tangentLengthSq = LengthSquared(tangentMove);
+
+		if (tangentLengthSq > kEpsilon) {
+			const Vector3 tangentDirection =
+				Scale(tangentMove, 1.0f / std::sqrt(tangentLengthSq));
+
+			playerVelocity.x +=
+				tangentDirection.x * settings_.swingAssist * deltaTime;
+			playerVelocity.y +=
+				tangentDirection.y * settings_.swingAssist * deltaTime;
+			playerVelocity.z +=
+				tangentDirection.z * settings_.swingAssist * deltaTime;
+		}
 	}
 
 	playerVelocity.y -=
@@ -146,6 +158,43 @@ void AnchorSwingGimmick::Update(
 	ApplyRopeConstraint(
 		playerPosition,
 		playerVelocity);
+
+	const float damping = hasMoveInput
+		? settings_.activeDamping
+		: settings_.idleDamping;
+
+	if (damping > 0.0f) {
+		const float dampingFactor =
+			std::exp(-damping * deltaTime);
+		playerVelocity = Scale(playerVelocity, dampingFactor);
+	}
+
+	if (!hasMoveInput && settings_.stopSpeed > 0.0f) {
+		rope = {
+			playerPosition.x - anchorPosition_.x,
+			playerPosition.y - anchorPosition_.y,
+			playerPosition.z - anchorPosition_.z,
+		};
+
+		const float currentRopeLengthSq = LengthSquared(rope);
+		const float stopSpeedSq = settings_.stopSpeed * settings_.stopSpeed;
+
+		if (currentRopeLengthSq > kEpsilon &&
+			LengthSquared(playerVelocity) <= stopSpeedSq) {
+
+			const Vector3 ropeDirection =
+				Scale(rope, 1.0f / std::sqrt(currentRopeLengthSq));
+
+			if (ropeDirection.y <= kRestDirectionY) {
+				playerPosition = {
+					anchorPosition_.x,
+					anchorPosition_.y - activeRopeLength_,
+					anchorPosition_.z,
+				};
+				playerVelocity = {};
+			}
+		}
+	}
 }
 
 bool AnchorSwingGimmick::IsConnected() const {
@@ -179,6 +228,15 @@ void AnchorSwingGimmick::SetSettings(
 
 	settings_.maxSpeed =
 		(std::max)(0.0f, settings_.maxSpeed);
+
+	settings_.activeDamping =
+		(std::max)(0.0f, settings_.activeDamping);
+
+	settings_.idleDamping =
+		(std::max)(0.0f, settings_.idleDamping);
+
+	settings_.stopSpeed =
+		(std::max)(0.0f, settings_.stopSpeed);
 }
 
 const AnchorSwingGimmick::Settings&

@@ -42,7 +42,16 @@ private:
 	void UpdateAnchorColor();
 	void UpdateGoal();
 	void ApplyStageBounds(KamataEngine::Vector3& position);
-	bool IsOnFloor(const KamataEngine::Vector3& position) const;
+	bool HasFloorSupportXZ(
+	    const KamataEngine::Vector3& position,
+	    const Collision::AABB& floorAABB) const;
+	bool GetStandingY(
+	    const KamataEngine::Vector3& position,
+	    float& standingY) const;
+	bool ResolveFloorLanding(
+	    const KamataEngine::Vector3& previousPosition,
+	    KamataEngine::Vector3& position);
+	bool IsPlayerInsideGoal() const;
 	void ResetPlayerAfterFall(const KamataEngine::Vector3& fallPosition);
 	void ResetDemo();
 
@@ -83,10 +92,12 @@ private:
 	bool isClear_ = false;
 
 	static constexpr float kDeltaTime = 1.0f / 60.0f;
-	static constexpr float kGravity = 19.6f;
-	static constexpr float kFloorHeight = 0.6f;
-	static constexpr float kAirControlAcceleration = 6.0f;
-	static constexpr float kMaxHorizontalSpeed = 14.0f;
+	static constexpr float kGravity = 16.0f;
+	static constexpr float kAirControlAcceleration = 5.0f;
+	static constexpr float kAirDamping = 0.10f;
+	static constexpr float kMaxHorizontalSpeed = 12.0f;
+	static constexpr float kGroundTolerance = 0.05f;
+	static constexpr float kMinFloorSupport = 0.18f;
 
 	static constexpr float kStageMinX = -10.4f;
 	static constexpr float kStageMaxX = 10.4f;
@@ -101,4 +112,5 @@ private:
 	const KamataEngine::Vector3 kAnchorPosition_ = {0.0f, 6.5f, 0.0f};
 	const KamataEngine::Vector3 kGoalPosition_ = {7.0f, 2.2f, 0.0f};
 	const KamataEngine::Vector3 kGoalScale_ = {1.1f, 1.0f, 1.2f};
+	const KamataEngine::Vector3 kGoalTriggerHalfSize_ = {0.75f, 0.65f, 0.85f};
 };
