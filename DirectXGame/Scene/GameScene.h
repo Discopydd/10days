@@ -25,6 +25,7 @@ public:
 	void Finalize();
 
 	bool IsClear() const { return isClear_; }
+	void ResetStage() { ResetGame(); }
 
 private:
 	// --------------------------------------------------------

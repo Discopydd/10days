@@ -139,6 +139,10 @@ SceneType LevelSelectScene::GetRequestedScene() const {
 	return requestedScene_;
 }
 
+void LevelSelectScene::ResetRequest() {
+	requestedScene_ = SceneType::kNone;
+}
+
 void LevelSelectScene::InitializeTransform(
 	WorldTransform& transform,
 	const Vector3& position,

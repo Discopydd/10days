@@ -9,15 +9,23 @@ namespace {
 constexpr float kEpsilon = 0.000001f;
 
 float LengthSquared(const Vector3& value) {
-	return value.x * value.x + value.y * value.y + value.z * value.z;
+	return value.x * value.x +
+		value.y * value.y +
+		value.z * value.z;
 }
 
 float Dot(const Vector3& a, const Vector3& b) {
-	return a.x * b.x + a.y * b.y + a.z * b.z;
+	return a.x * b.x +
+		a.y * b.y +
+		a.z * b.z;
 }
 
 Vector3 Scale(const Vector3& value, float scale) {
-	return {value.x * scale, value.y * scale, value.z * scale};
+	return {
+		value.x * scale,
+		value.y * scale,
+		value.z * scale,
+	};
 }
 } // namespace
 
@@ -37,21 +45,24 @@ bool AnchorSwingGimmick::Connect(
 		playerPosition.y - anchorPosition.y,
 		playerPosition.z - anchorPosition.z,
 	};
-	const float distance = std::sqrt(LengthSquared(difference));
 
-	if (distance > settings_.connectDistance) {
+	const float distance =
+		std::sqrt(LengthSquared(difference));
+
+	if (distance > settings_.connectDistance ||
+		distance <= kEpsilon) {
 		return false;
 	}
 
 	anchorPosition_ = anchorPosition;
-	// 接続時にプレイヤーを急に引き寄せない。ただし設定上限は超えない。
-	activeRopeLength_ = (std::min)(settings_.ropeLength, distance);
+	activeRopeLength_ =
+		(std::min)(settings_.ropeLength, distance);
 	isConnected_ = true;
+
 	return true;
 }
 
 void AnchorSwingGimmick::Disconnect() {
-	// playerVelocityを所有しないため、解除時も慣性はそのまま残る。
 	isConnected_ = false;
 }
 
@@ -63,7 +74,10 @@ bool AnchorSwingGimmick::ToggleConnection(
 		Disconnect();
 		return true;
 	}
-	return Connect(anchorPosition, playerPosition);
+
+	return Connect(
+		anchorPosition,
+		playerPosition);
 }
 
 void AnchorSwingGimmick::Update(
@@ -81,31 +95,43 @@ void AnchorSwingGimmick::Update(
 		playerPosition.y - anchorPosition_.y,
 		playerPosition.z - anchorPosition_.z,
 	};
+
 	const float ropeLengthSq = LengthSquared(rope);
 
-	// 入力による移動速度のうち、ロープに対して接線方向の成分だけを
-	// 補助加速として使う。アンカーへ直接近づく／離れる入力は加速にしない。
 	if (ropeLengthSq > kEpsilon) {
-		const float inverseLength = 1.0f / std::sqrt(ropeLengthSq);
-		const Vector3 ropeDirection = Scale(rope, inverseLength);
-		const float radialMove = Dot(playerMoveVelocity, ropeDirection);
+		const float inverseLength =
+			1.0f / std::sqrt(ropeLengthSq);
+
+		const Vector3 ropeDirection =
+			Scale(rope, inverseLength);
+
+		const float radialMove =
+			Dot(playerMoveVelocity, ropeDirection);
+
 		const Vector3 tangentMove = {
 			playerMoveVelocity.x - ropeDirection.x * radialMove,
 			playerMoveVelocity.y - ropeDirection.y * radialMove,
 			playerMoveVelocity.z - ropeDirection.z * radialMove,
 		};
 
-		playerVelocity.x += tangentMove.x * settings_.swingAssist * deltaTime;
-		playerVelocity.y += tangentMove.y * settings_.swingAssist * deltaTime;
-		playerVelocity.z += tangentMove.z * settings_.swingAssist * deltaTime;
+		playerVelocity.x +=
+			tangentMove.x * settings_.swingAssist * deltaTime;
+		playerVelocity.y +=
+			tangentMove.y * settings_.swingAssist * deltaTime;
+		playerVelocity.z +=
+			tangentMove.z * settings_.swingAssist * deltaTime;
 	}
 
-	// 重力と現在速度で位置を積分する。
-	playerVelocity.y -= settings_.gravity * deltaTime;
+	playerVelocity.y -=
+		settings_.gravity * deltaTime;
 
 	if (settings_.maxSpeed > 0.0f) {
-		const float speedSq = LengthSquared(playerVelocity);
-		const float maxSpeedSq = settings_.maxSpeed * settings_.maxSpeed;
+		const float speedSq =
+			LengthSquared(playerVelocity);
+
+		const float maxSpeedSq =
+			settings_.maxSpeed * settings_.maxSpeed;
+
 		if (speedSq > maxSpeedSq) {
 			playerVelocity = Scale(
 				playerVelocity,
@@ -117,7 +143,9 @@ void AnchorSwingGimmick::Update(
 	playerPosition.y += playerVelocity.y * deltaTime;
 	playerPosition.z += playerVelocity.z * deltaTime;
 
-	ApplyRopeConstraint(playerPosition, playerVelocity);
+	ApplyRopeConstraint(
+		playerPosition,
+		playerVelocity);
 }
 
 bool AnchorSwingGimmick::IsConnected() const {
@@ -132,15 +160,29 @@ float AnchorSwingGimmick::GetRopeLength() const {
 	return activeRopeLength_;
 }
 
-void AnchorSwingGimmick::SetSettings(const Settings& settings) {
+void AnchorSwingGimmick::SetSettings(
+    const Settings& settings) {
+
 	settings_ = settings;
-	settings_.connectDistance = (std::max)(0.0f, settings_.connectDistance);
-	settings_.ropeLength = (std::max)(0.0f, settings_.ropeLength);
-	settings_.gravity = (std::max)(0.0f, settings_.gravity);
-	settings_.swingAssist = (std::max)(0.0f, settings_.swingAssist);
+
+	settings_.connectDistance =
+		(std::max)(0.0f, settings_.connectDistance);
+
+	settings_.ropeLength =
+		(std::max)(0.0f, settings_.ropeLength);
+
+	settings_.gravity =
+		(std::max)(0.0f, settings_.gravity);
+
+	settings_.swingAssist =
+		(std::max)(0.0f, settings_.swingAssist);
+
+	settings_.maxSpeed =
+		(std::max)(0.0f, settings_.maxSpeed);
 }
 
-const AnchorSwingGimmick::Settings& AnchorSwingGimmick::GetSettings() const {
+const AnchorSwingGimmick::Settings&
+AnchorSwingGimmick::GetSettings() const {
 	return settings_;
 }
 
@@ -153,28 +195,28 @@ void AnchorSwingGimmick::ApplyRopeConstraint(
 		playerPosition.y - anchorPosition_.y,
 		playerPosition.z - anchorPosition_.z,
 	};
-	const float distanceSq = LengthSquared(rope);
-	const float maxDistanceSq = activeRopeLength_ * activeRopeLength_;
 
-	if (distanceSq <= maxDistanceSq || distanceSq <= kEpsilon) {
+	const float distanceSq = LengthSquared(rope);
+
+	if (distanceSq <= kEpsilon ||
+		activeRopeLength_ <= kEpsilon) {
 		return;
 	}
 
-	const float inverseDistance = 1.0f / std::sqrt(distanceSq);
-	const Vector3 ropeDirection = Scale(rope, inverseDistance);
+	const float distance = std::sqrt(distanceSq);
+	const Vector3 ropeDirection =
+		Scale(rope, 1.0f / distance);
 
-	// プレイヤーをロープ球面上へ戻して距離を制限する。
 	playerPosition = {
 		anchorPosition_.x + ropeDirection.x * activeRopeLength_,
 		anchorPosition_.y + ropeDirection.y * activeRopeLength_,
 		anchorPosition_.z + ropeDirection.z * activeRopeLength_,
 	};
 
-	// 外向き速度だけを除去し、接線方向の速度（スウィング）は維持する。
-	const float radialSpeed = Dot(playerVelocity, ropeDirection);
-	if (radialSpeed > 0.0f) {
-		playerVelocity.x -= ropeDirection.x * radialSpeed;
-		playerVelocity.y -= ropeDirection.y * radialSpeed;
-		playerVelocity.z -= ropeDirection.z * radialSpeed;
-	}
+	const float radialSpeed =
+		Dot(playerVelocity, ropeDirection);
+
+	playerVelocity.x -= ropeDirection.x * radialSpeed;
+	playerVelocity.y -= ropeDirection.y * radialSpeed;
+	playerVelocity.z -= ropeDirection.z * radialSpeed;
 }

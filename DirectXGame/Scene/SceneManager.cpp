@@ -39,6 +39,10 @@ bool SceneManager::Update() {
 		if (swingScene_ == nullptr || !swingScene_->Update()) {
 			return false;
 		}
+
+		if (swingScene_->IsClear()) {
+			ChangeScene(SceneType::kLevelSelect);
+		}
 		break;
 	}
 
@@ -88,6 +92,8 @@ void SceneManager::ChangeScene(SceneType nextScene) {
 		if (gameScene_ == nullptr) {
 			gameScene_ = new GameScene();
 			gameScene_->Initialize();
+		} else {
+			gameScene_->ResetStage();
 		}
 		break;
 
@@ -96,12 +102,15 @@ void SceneManager::ChangeScene(SceneType nextScene) {
 			levelSelectScene_ = new LevelSelectScene();
 			levelSelectScene_->Initialize();
 		}
+		levelSelectScene_->ResetRequest();
 		break;
 
 	case SceneType::kSwing:
 		if (swingScene_ == nullptr) {
 			swingScene_ = new SwingDemoScene();
 			swingScene_->Initialize();
+		} else {
+			swingScene_->ResetStage();
 		}
 		break;
 

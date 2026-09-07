@@ -12,6 +12,7 @@ public:
 	void Finalize();
 
 	SceneType GetRequestedScene() const;
+	void ResetRequest();
 
 private:
 	void InitializeTransform(
