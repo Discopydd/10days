@@ -103,8 +103,8 @@ private:
 private:
 	KamataEngine::Input* input_ = nullptr;
 
-	Player player_;
-	KamataEngine::Camera camera_;
+	Player* player_ = nullptr;
+	KamataEngine::Camera* camera_ = nullptr;
 
 	// --------------------------------------------------------
 	// モデル
@@ -121,7 +121,7 @@ private:
 	// 移動ブロック3個
 	// --------------------------------------------------------
 	static constexpr int kBlockCount = 3;
-	MovableBlockGimmick movableBlocks_[kBlockCount];
+	MovableBlockGimmick* movableBlocks_[kBlockCount]{};
 	int activeBlockIndex_ = -1;
 
 	// --------------------------------------------------------
@@ -135,7 +135,7 @@ private:
 	// --------------------------------------------------------
 	// ドア
 	// --------------------------------------------------------
-	SwitchDoorGimmick door_;
+	SwitchDoorGimmick* door_ = nullptr;
 
 	// --------------------------------------------------------
 	// GOAL

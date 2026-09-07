@@ -31,8 +31,8 @@ int WINAPI WinMain(
 	// ========================================================
 	// GameScene初期化
 	// ========================================================
-	GameScene scene;
-	scene.Initialize();
+	GameScene* scene = new GameScene();
+	scene->Initialize();
 
 	// ========================================================
 	// メインループ
@@ -63,7 +63,7 @@ int WINAPI WinMain(
 		// ----------------------------------------------------
 		// GameScene更新
 		// ----------------------------------------------------
-		if (!scene.Update()) {
+		if (!scene->Update()) {
 			break;
 		}
 
@@ -76,7 +76,7 @@ int WINAPI WinMain(
 		Model::PreDraw(
 			Model::CullingMode::kNone);
 
-		scene.Draw();
+		scene->Draw();
 
 		Model::PostDraw();
 
@@ -86,7 +86,9 @@ int WINAPI WinMain(
 	// ========================================================
 	// 終了処理
 	// ========================================================
-	scene.Finalize();
+	scene->Finalize();
+	delete scene;
+	scene = nullptr;
 
 	KamataEngine::Finalize();
 

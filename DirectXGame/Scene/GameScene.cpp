@@ -8,6 +8,14 @@ using namespace KamataEngine;
 void GameScene::Initialize() {
 	input_ = Input::GetInstance();
 
+	camera_ = new Camera();
+	player_ = new Player();
+	door_ = new SwitchDoorGimmick();
+
+	for (int i = 0; i < kBlockCount; ++i) {
+		movableBlocks_[i] = new MovableBlockGimmick();
+	}
+
 	// --------------------------------------------------------
 	// モデル
 	// --------------------------------------------------------
@@ -23,21 +31,21 @@ void GameScene::Initialize() {
 	// カメラ
 	// ステージ全体が見えるように少し高めに配置する
 	// --------------------------------------------------------
-	camera_.Initialize();
-	camera_.translation_ = {0.0f, 23.0f, -28.0f};
-	camera_.rotation_ = {0.68f, 0.0f, 0.0f};
-	camera_.UpdateMatrix();
+	camera_->Initialize();
+	camera_->translation_ = {0.0f, 23.0f, -28.0f};
+	camera_->rotation_ = {0.68f, 0.0f, 0.0f};
+	camera_->UpdateMatrix();
 
 	// --------------------------------------------------------
 	// Player
 	// --------------------------------------------------------
-	player_.Initialize(kPlayerStartPosition_);
+	player_->Initialize(kPlayerStartPosition_);
 
 	// --------------------------------------------------------
 	// 移動ブロック3個
 	// --------------------------------------------------------
 	for (int i = 0; i < kBlockCount; ++i) {
-		movableBlocks_[i].Initialize(
+		movableBlocks_[i]->Initialize(
 			blockModel_,
 			kBlockStartPositions_[i],
 			{1.0f, 1.0f, 1.0f});
@@ -61,7 +69,7 @@ void GameScene::Initialize() {
 	// --------------------------------------------------------
 	// 中央ドア
 	// --------------------------------------------------------
-	door_.Initialize(
+	door_->Initialize(
 		doorModel_,
 		kDoorPosition_,
 		kDoorScale_,
@@ -160,7 +168,7 @@ bool GameScene::Update() {
 	}
 
 	// ドアの開閉アニメーションは毎フレーム更新する
-	door_.Update();
+	door_->Update();
 
 	// クリア後はその場で停止し、Rでやり直せるようにする
 	if (isClear_) {
@@ -197,7 +205,7 @@ bool GameScene::Update() {
 			CancelConnection();
 		} else {
 			const float distanceToBlock = Collision::Distance(
-				player_.GetPosition(),
+				player_->GetPosition(),
 				activeBlock->GetPosition());
 
 			if (distanceToBlock > kDisconnectDistance) {
@@ -221,7 +229,8 @@ bool GameScene::Update() {
 }
 
 void GameScene::Draw() {
-	if (blockModel_ == nullptr || switchModel_ == nullptr ||
+	if (player_ == nullptr || camera_ == nullptr || door_ == nullptr ||
+		blockModel_ == nullptr || switchModel_ == nullptr ||
 		doorModel_ == nullptr || goalModel_ == nullptr ||
 		floorModel_ == nullptr || wallModel_ == nullptr ||
 		ropeModel_ == nullptr) {
@@ -231,38 +240,38 @@ void GameScene::Draw() {
 	// 床
 	floorModel_->Draw(
 		floorWorldTransform_,
-		camera_,
+		*camera_,
 		&floorColor_);
 
 	// 外壁・中央仕切り壁
 	for (int i = 0; i < kWallCount; ++i) {
 		wallModel_->Draw(
 			wallWorldTransforms_[i],
-			camera_,
+			*camera_,
 			&wallColor_);
 	}
 
 	// GOAL
 	goalModel_->Draw(
 		goalWorldTransform_,
-		camera_,
+		*camera_,
 		&goalColor_);
 
 	// スイッチ
 	switchModel_->Draw(
 		switchWorldTransform_,
-		camera_,
+		*camera_,
 		&switchColor_);
 
 	// ドア
-	door_.Draw(camera_);
+	door_->Draw(*camera_);
 
 	// Player
-	player_.Draw(camera_);
+	player_->Draw(*camera_);
 
 	// 3個のBlock
 	for (int i = 0; i < kBlockCount; ++i) {
-		movableBlocks_[i].Draw(camera_);
+		movableBlocks_[i]->Draw(*camera_);
 	}
 
 	// 接続動作中だけ糸を描画する
@@ -270,13 +279,28 @@ void GameScene::Draw() {
 		activeBlockIndex_ >= 0) {
 		ropeModel_->Draw(
 			ropeWorldTransform_,
-			camera_,
+			*camera_,
 			&ropeColor_);
 	}
 }
 
 void GameScene::Finalize() {
-	player_.Finalize();
+	if (player_ != nullptr) {
+		player_->Finalize();
+		delete player_;
+		player_ = nullptr;
+	}
+
+	for (int i = 0; i < kBlockCount; ++i) {
+		delete movableBlocks_[i];
+		movableBlocks_[i] = nullptr;
+	}
+
+	delete door_;
+	door_ = nullptr;
+
+	delete camera_;
+	camera_ = nullptr;
 
 	delete blockModel_;
 	delete switchModel_;
@@ -307,7 +331,7 @@ void GameScene::InitializeTransform(
 }
 
 Vector3 GameScene::GetPlayerInputMove() const {
-	return player_.GetInputMove();
+	return player_->GetInputMove();
 }
 
 int GameScene::BuildPlayerObstacleList(
@@ -327,8 +351,8 @@ int GameScene::BuildPlayerObstacleList(
 	}
 
 	// ドアが完全に開くまでは障害物として扱う
-	if (door_.IsBlocking() && count < maxCount) {
-		outObstacles[count++] = door_.GetAABB();
+	if (door_->IsBlocking() && count < maxCount) {
+		outObstacles[count++] = door_->GetAABB();
 	}
 
 	// 3個のBlockもPlayerにとって障害物
@@ -336,7 +360,7 @@ int GameScene::BuildPlayerObstacleList(
 		if (i == ignoreBlockIndex) {
 			continue;
 		}
-		outObstacles[count++] = movableBlocks_[i].GetAABB();
+		outObstacles[count++] = movableBlocks_[i]->GetAABB();
 	}
 
 	return count;
@@ -352,7 +376,7 @@ Vector3 GameScene::MovePlayerWithCollision(
 		kMaxPlayerObstacles,
 		ignoreBlockIndex);
 
-	return player_.MoveWithCollision(
+	return player_->MoveWithCollision(
 		move,
 		obstacles,
 		obstacleCount,
@@ -369,7 +393,7 @@ bool GameScene::CanPlayerMoveTo(
 		kMaxPlayerObstacles,
 		ignoreBlockIndex);
 
-	return player_.CanMoveTo(
+	return player_->CanMoveTo(
 		position,
 		obstacles,
 		obstacleCount,
@@ -379,21 +403,21 @@ bool GameScene::CanPlayerMoveTo(
 Collision::AABB GameScene::GetPlayerAABBAt(
     const Vector3& position) const {
 
-	return player_.GetAABBAt(position);
+	return player_->GetAABBAt(position);
 }
 
 MovableBlockGimmick* GameScene::GetActiveBlock() {
 	if (activeBlockIndex_ < 0 || activeBlockIndex_ >= kBlockCount) {
 		return nullptr;
 	}
-	return &movableBlocks_[activeBlockIndex_];
+	return movableBlocks_[activeBlockIndex_];
 }
 
 const MovableBlockGimmick* GameScene::GetActiveBlock() const {
 	if (activeBlockIndex_ < 0 || activeBlockIndex_ >= kBlockCount) {
 		return nullptr;
 	}
-	return &movableBlocks_[activeBlockIndex_];
+	return movableBlocks_[activeBlockIndex_];
 }
 
 int GameScene::FindNearestConnectableBlock() const {
@@ -402,13 +426,13 @@ int GameScene::FindNearestConnectableBlock() const {
 
 	for (int i = 0; i < kBlockCount; ++i) {
 		// スイッチ上で固定されたBlockには再接続しない
-		if (movableBlocks_[i].IsLocked()) {
+		if (movableBlocks_[i]->IsLocked()) {
 			continue;
 		}
 
 		const float distance = Collision::Distance(
-			player_.GetPosition(),
-			movableBlocks_[i].GetPosition());
+			player_->GetPosition(),
+			movableBlocks_[i]->GetPosition());
 
 		if (distance <= kConnectDistance &&
 			distance < nearestDistance) {
@@ -428,17 +452,20 @@ Vector3 GameScene::MoveBlockWithCollision(
 		return {0.0f, 0.0f, 0.0f};
 	}
 
-	MovableBlockGimmick& block = movableBlocks_[blockIndex];
-	block.ClearObstacles();
+	MovableBlockGimmick* block = movableBlocks_[blockIndex];
+	if (block == nullptr) {
+		return {0.0f, 0.0f, 0.0f};
+	}
+	block->ClearObstacles();
 
 	// 外壁・中央壁
 	for (int i = 0; i < kWallCount; ++i) {
-		block.AddObstacle(wallAABBs_[i]);
+		block->AddObstacle(wallAABBs_[i]);
 	}
 
 	// 閉じているドア
-	if (door_.IsBlocking()) {
-		block.AddObstacle(door_.GetAABB());
+	if (door_->IsBlocking()) {
+		block->AddObstacle(door_->GetAABB());
 	}
 
 	// 他の2個のBlock
@@ -446,10 +473,10 @@ Vector3 GameScene::MoveBlockWithCollision(
 		if (i == blockIndex) {
 			continue;
 		}
-		block.AddObstacle(movableBlocks_[i].GetAABB());
+		block->AddObstacle(movableBlocks_[i]->GetAABB());
 	}
 
-	return block.MoveBy(move);
+	return block->MoveBy(move);
 }
 
 void GameScene::UpdateConnectedMovement() {
@@ -470,9 +497,9 @@ void GameScene::UpdateConnectedMovement() {
 	}
 
 	Vector3 diff = {
-		activeBlock->GetPosition().x - player_.GetPosition().x,
+		activeBlock->GetPosition().x - player_->GetPosition().x,
 		0.0f,
-		activeBlock->GetPosition().z - player_.GetPosition().z,
+		activeBlock->GetPosition().z - player_->GetPosition().z,
 	};
 
 	const float distanceSq =
@@ -518,9 +545,9 @@ void GameScene::UpdateConnectedMovement() {
 			MovePlayerWithCollision(desiredMove);
 
 		diff = {
-			activeBlock->GetPosition().x - player_.GetPosition().x,
+			activeBlock->GetPosition().x - player_->GetPosition().x,
 			0.0f,
-			activeBlock->GetPosition().z - player_.GetPosition().z,
+			activeBlock->GetPosition().z - player_->GetPosition().z,
 		};
 
 		const float newDistanceSq =
@@ -563,8 +590,8 @@ void GameScene::ResolvePlayerBlockOverlap(int blockIndex) {
 		return;
 	}
 
-	Collision::AABB playerAABB = player_.GetAABB();
-	Collision::AABB blockAABB = movableBlocks_[blockIndex].GetAABB();
+	Collision::AABB playerAABB = player_->GetAABB();
+	Collision::AABB blockAABB = movableBlocks_[blockIndex]->GetAABB();
 
 	if (!Collision::IsOverlap(playerAABB, blockAABB)) {
 		return;
@@ -586,14 +613,14 @@ void GameScene::ResolvePlayerBlockOverlap(int blockIndex) {
 
 	if (overlapX <= overlapZ) {
 		const float sign =
-			(player_.GetPosition().x < movableBlocks_[blockIndex].GetPosition().x)
+			(player_->GetPosition().x < movableBlocks_[blockIndex]->GetPosition().x)
 			? -1.0f
 			: 1.0f;
 
 		correction.x = sign * (overlapX + kPlayerBlockSkin);
 	} else {
 		const float sign =
-			(player_.GetPosition().z < movableBlocks_[blockIndex].GetPosition().z)
+			(player_->GetPosition().z < movableBlocks_[blockIndex]->GetPosition().z)
 			? -1.0f
 			: 1.0f;
 
@@ -601,14 +628,14 @@ void GameScene::ResolvePlayerBlockOverlap(int blockIndex) {
 	}
 
 	const Vector3 correctedPlayerPosition = {
-		player_.GetPosition().x + correction.x,
-		player_.GetPosition().y,
-		player_.GetPosition().z + correction.z,
+		player_->GetPosition().x + correction.x,
+		player_->GetPosition().y,
+		player_->GetPosition().z + correction.z,
 	};
 
 	// 対象Blockだけ一時的に除外し、他の壁・Block・Doorは判定する
 	if (CanPlayerMoveTo(correctedPlayerPosition, blockIndex)) {
-		player_.SetPosition(correctedPlayerPosition);
+		player_->SetPosition(correctedPlayerPosition);
 		return;
 	}
 
@@ -638,8 +665,8 @@ void GameScene::UpdateConnectionInput() {
 
 	connectionState_ = ConnectionState::kShooting;
 	ropeShootProgress_ = 0.0f;
-	movableBlocks_[activeBlockIndex_].SetConnected(false);
-	movableBlocks_[activeBlockIndex_].SetPullingVisual(false);
+	movableBlocks_[activeBlockIndex_]->SetConnected(false);
+	movableBlocks_[activeBlockIndex_]->SetPullingVisual(false);
 }
 
 void GameScene::UpdateRopeShot() {
@@ -665,7 +692,7 @@ void GameScene::UpdatePullTogether() {
 		return;
 	}
 
-	Vector3 playerPosition = player_.GetPosition();
+	Vector3 playerPosition = player_->GetPosition();
 	Vector3 blockPosition = activeBlock->GetPosition();
 
 	Vector3 diff = {
@@ -718,7 +745,7 @@ void GameScene::UpdatePullTogether() {
 			-direction.z * blockStep,
 		});
 
-	playerPosition = player_.GetPosition();
+	playerPosition = player_->GetPosition();
 	blockPosition = activeBlock->GetPosition();
 
 	diff = {
@@ -759,7 +786,7 @@ void GameScene::UpdatePullTogether() {
 	ResolvePlayerBlockOverlap(activeBlockIndex_);
 
 	// 接続完了判定
-	playerPosition = player_.GetPosition();
+	playerPosition = player_->GetPosition();
 	blockPosition = activeBlock->GetPosition();
 
 	diff = {
@@ -799,7 +826,7 @@ float GameScene::CalculateContactDistanceXZ(
 		return 0.0f;
 	}
 
-	const Vector3& playerHalfSize = player_.GetHalfSize();
+	const Vector3& playerHalfSize = player_->GetHalfSize();
 	const Vector3& blockHalfSize = activeBlock->GetHalfSize();
 
 	const float sumHalfX = playerHalfSize.x + blockHalfSize.x;
@@ -847,12 +874,12 @@ void GameScene::UpdateSwitch() {
 	}
 
 	for (int i = 0; i < kBlockCount; ++i) {
-		if (movableBlocks_[i].IsLocked()) {
+		if (movableBlocks_[i]->IsLocked()) {
 			continue;
 		}
 
 		if (!Collision::IsOverlapXZ(
-				movableBlocks_[i].GetAABB(),
+				movableBlocks_[i]->GetAABB(),
 				switchAABB_)) {
 			continue;
 		}
@@ -860,7 +887,7 @@ void GameScene::UpdateSwitch() {
 		// ----------------------------------------------------
 		// Blockをスイッチ中央へ固定
 		// ----------------------------------------------------
-		movableBlocks_[i].SnapAndLock({
+		movableBlocks_[i]->SnapAndLock({
 			kSwitchPosition_.x,
 			1.2f,
 			kSwitchPosition_.z,
@@ -872,7 +899,7 @@ void GameScene::UpdateSwitch() {
 		// ----------------------------------------------------
 		// スイッチ作動 → 中央ドアOPEN
 		// ----------------------------------------------------
-		door_.Open();
+		door_->Open();
 
 		// 操作中のBlockを置いた場合は接続解除
 		if (activeBlockIndex_ == i) {
@@ -890,7 +917,7 @@ void GameScene::UpdateGoal() {
 
 	// 壁の向こう側のGOALへPlayerが到達したら1ステージクリア
 	if (Collision::IsOverlapXZ(
-			player_.GetAABB(),
+			player_->GetAABB(),
 			goalAABB_)) {
 
 		isClear_ = true;
@@ -911,7 +938,7 @@ void GameScene::UpdateRope() {
 		return;
 	}
 
-	const Vector3 start = player_.GetPosition();
+	const Vector3 start = player_->GetPosition();
 	const Vector3 target = activeBlock->GetPosition();
 
 	Vector3 end = target;
@@ -975,13 +1002,13 @@ void GameScene::SetRopeTransform(
 }
 
 void GameScene::ResetGame() {
-	player_.Reset(kPlayerStartPosition_);
+	player_->Reset(kPlayerStartPosition_);
 
 	for (int i = 0; i < kBlockCount; ++i) {
-		movableBlocks_[i].Reset(kBlockStartPositions_[i]);
+		movableBlocks_[i]->Reset(kBlockStartPositions_[i]);
 	}
 
-	door_.Reset();
+	door_->Reset();
 
 	connectionState_ = ConnectionState::kIdle;
 	ropeShootProgress_ = 0.0f;
