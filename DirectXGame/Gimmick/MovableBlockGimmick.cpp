@@ -72,7 +72,7 @@ void MovableBlockGimmick::Update(
 			direction.z * moveAmount,
 		};
 
-		TryMoveXZ(blockMove);
+		MoveBy(blockMove);
 	}
 
 	worldTransform_.UpdateMatarix();
@@ -94,11 +94,41 @@ void MovableBlockGimmick::SetConnected(bool connected) {
 	isConnected_ = connected;
 
 	if (isConnected_) {
-		// 接続中は黄色にして、状態を見ただけで分かるようにする
+		// 接続完了後は黄色にする
 		objectColor_.SetColor({1.0f, 0.85f, 0.15f, 1.0f});
 	} else {
 		SetNormalColor();
 	}
+}
+
+void MovableBlockGimmick::SetPullingVisual(bool pulling) {
+	if (isLocked_ || isConnected_) {
+		return;
+	}
+
+	if (pulling) {
+		// 引き寄せ中はオレンジ色で状態を分かりやすくする
+		objectColor_.SetColor({1.0f, 0.45f, 0.10f, 1.0f});
+	} else {
+		SetNormalColor();
+	}
+}
+
+Vector3 MovableBlockGimmick::MoveBy(const Vector3& move) {
+	if (isLocked_) {
+		return {0.0f, 0.0f, 0.0f};
+	}
+
+	const Vector3 oldPosition = worldTransform_.translation_;
+
+	TryMoveXZ(move);
+	worldTransform_.UpdateMatarix();
+
+	return {
+		worldTransform_.translation_.x - oldPosition.x,
+		worldTransform_.translation_.y - oldPosition.y,
+		worldTransform_.translation_.z - oldPosition.z,
+	};
 }
 
 void MovableBlockGimmick::SnapAndLock(const Vector3& position) {
@@ -142,6 +172,10 @@ const Vector3& MovableBlockGimmick::GetPosition() const {
 	return worldTransform_.translation_;
 }
 
+const Vector3& MovableBlockGimmick::GetHalfSize() const {
+	return halfSize_;
+}
+
 bool MovableBlockGimmick::IsConnected() const {
 	return isConnected_;
 }
@@ -152,7 +186,6 @@ bool MovableBlockGimmick::IsLocked() const {
 
 void MovableBlockGimmick::SetNormalColor() {
 	// 通常時は赤色
-	// ※ゲーム内の漢字が「紅」でなくなっても、ここを変えるだけで対応可能
 	objectColor_.SetColor({1.0f, 0.15f, 0.15f, 1.0f});
 }
 

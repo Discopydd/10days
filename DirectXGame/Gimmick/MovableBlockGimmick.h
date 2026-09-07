@@ -7,9 +7,7 @@
 // ============================================================
 // 移動可能ブロックギミック
 //
-// 「紅」など特定の漢字名には依存させず、
 // 「接続中だけ押す・引くことができるブロック」として実装する。
-// そのため、後で担当する漢字が変更されてもこのクラスは流用できる。
 // ============================================================
 class MovableBlockGimmick {
 public:
@@ -19,9 +17,7 @@ public:
 	    const KamataEngine::Vector3& position,
 	    const KamataEngine::Vector3& scale = {1.0f, 1.0f, 1.0f});
 
-	// 毎フレーム更新
-	// playerPosition : プレイヤーの現在位置
-	// playerMoveDelta: プレイヤーがこのフレームで移動した量
+	// 接続中の押す／引く更新
 	void Update(
 	    const KamataEngine::Vector3& playerPosition,
 	    const KamataEngine::Vector3& playerMoveDelta);
@@ -30,8 +26,14 @@ public:
 	void Draw(const KamataEngine::Camera& camera);
 
 	// 接続開始 / 接続解除
-	// 本番では「接続システム」側から呼び出してもらう想定
 	void SetConnected(bool connected);
+
+	// 糸が命中して引き寄せ中の見た目にする
+	void SetPullingVisual(bool pulling);
+
+	// 指定移動量だけ、壁判定を行いながら移動する
+	// 実際に移動できた量を返す
+	KamataEngine::Vector3 MoveBy(const KamataEngine::Vector3& move);
 
 	// 指定位置へスナップし、その場に固定する
 	void SnapAndLock(const KamataEngine::Vector3& position);
@@ -50,6 +52,9 @@ public:
 
 	// 現在位置を取得する
 	const KamataEngine::Vector3& GetPosition() const;
+
+	// 当たり判定用の半サイズを取得する
+	const KamataEngine::Vector3& GetHalfSize() const;
 
 	// 接続中か
 	bool IsConnected() const;
@@ -81,7 +86,6 @@ private:
 	// スイッチへ置いた後など、固定中は移動できない
 	bool isLocked_ = false;
 
-	// 10日制作のデモなので固定長配列で十分
 	static constexpr int kMaxObstacles = 8;
 	Collision::AABB obstacles_[kMaxObstacles]{};
 	int obstacleCount_ = 0;
