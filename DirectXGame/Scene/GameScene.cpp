@@ -228,6 +228,14 @@ bool GameScene::Update() {
 	return true;
 }
 
+bool GameScene::IsClear() const {
+	return isClear_;
+}
+
+void GameScene::ResetStage() {
+	ResetGame();
+}
+
 void GameScene::Draw() {
 	if (player_ == nullptr || camera_ == nullptr || door_ == nullptr ||
 		blockModel_ == nullptr || switchModel_ == nullptr ||

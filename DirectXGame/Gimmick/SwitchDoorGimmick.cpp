@@ -74,5 +74,11 @@ bool SwitchDoorGimmick::IsOpen() const {
 }
 
 Collision::AABB SwitchDoorGimmick::GetAABB() const {
+	// 完全に開くまでは閉じた位置の当たり判定を維持する。
+	// 見た目のドアが上昇しても、途中で下をすり抜けられないようにする。
+	if (!isOpen_) {
+		return Collision::MakeAABB(closedPosition_, halfSize_);
+	}
+
 	return Collision::MakeAABB(worldTransform_.translation_, halfSize_);
 }

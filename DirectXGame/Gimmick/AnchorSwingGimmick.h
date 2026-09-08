@@ -21,7 +21,7 @@ public:
 		float stopSpeed = 0.20f;
 	};
 
-	void Initialize(const Settings& settings = Settings{});
+	void Initialize(const Settings& settings);
 
 	bool Connect(
 	    const KamataEngine::Vector3& anchorPosition,

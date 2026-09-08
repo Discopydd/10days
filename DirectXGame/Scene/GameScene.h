@@ -24,6 +24,12 @@ public:
 	void Draw();
 	void Finalize();
 
+	// SceneManager から参照するステージ状態
+	bool IsClear() const;
+
+	// ステージを初期状態へ戻す
+	void ResetStage();
+
 private:
 	// --------------------------------------------------------
 	// 接続状態

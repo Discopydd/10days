@@ -1,5 +1,7 @@
 #include "Player.h"
 
+#include <cmath>
+
 using namespace KamataEngine;
 
 void Player::Initialize(const Vector3& position) {
@@ -51,6 +53,14 @@ Vector3 Player::GetInputMove() const {
 	}
 	if (input_->PushKey(DIK_D)) {
 		move.x += moveSpeed_;
+	}
+
+	// 斜め入力時も直進時と同じ速度になるように正規化する。
+	const float lengthSq = move.x * move.x + move.z * move.z;
+	if (lengthSq > moveSpeed_ * moveSpeed_) {
+		const float scale = moveSpeed_ / std::sqrt(lengthSq);
+		move.x *= scale;
+		move.z *= scale;
 	}
 
 	return move;

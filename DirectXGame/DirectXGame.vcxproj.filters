@@ -57,6 +57,9 @@
     <ClCompile Include="WorldTransformEx.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Demo\GimmickDemoScene.cpp">
+      <Filter>Demo</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\Collision.h">
@@ -91,6 +94,9 @@
     </ClInclude>
     <ClInclude Include="math.h">
       <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Demo\GimmickDemoScene.h">
+      <Filter>Demo</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -178,6 +178,7 @@ xcopy "$(ProjectDir)..\External\KamataEngine\shaders" "$(ProjectDir)Resources\En
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Demo\GimmickDemoScene.cpp" />
     <ClCompile Include="Gimmick\MovableBlockGimmick.cpp" />
     <ClCompile Include="Gimmick\SwitchDoorGimmick.cpp" />
     <ClCompile Include="Gimmick\AnchorSwingGimmick.cpp" />
@@ -191,6 +192,7 @@ xcopy "$(ProjectDir)..\External\KamataEngine\shaders" "$(ProjectDir)Resources\En
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\Collision.h" />
+    <ClInclude Include="Demo\GimmickDemoScene.h" />
     <ClInclude Include="Gimmick\MovableBlockGimmick.h" />
     <ClInclude Include="Gimmick\SwitchDoorGimmick.h" />
     <ClInclude Include="Gimmick\AnchorSwingGimmick.h" />
