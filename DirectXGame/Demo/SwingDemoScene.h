@@ -48,6 +48,10 @@ private:
 	    bool ignoreBlock = false);
 	KamataEngine::Vector3 UpdateConnectedBlockMovement(
 	    const KamataEngine::Vector3& desiredMove);
+	KamataEngine::Vector3 UpdateBlockPullTogether();
+	float CalculateBlockContactDistanceXZ(
+	    const KamataEngine::Vector3& direction) const;
+	void CancelBlockConnection();
 	bool IsPlayerGrounded() const;
 	bool HasGateBarrierCollision(const KamataEngine::Vector3& position) const;
 	void ResolveGateBarrierCollision(
@@ -127,6 +131,7 @@ private:
 
 	KamataEngine::Vector3 playerVelocity_{};
 	KamataEngine::Vector3 safeRespawnPosition_{};
+	bool blockPulling_ = false;
 	bool isClear_ = false;
 
 	static constexpr float kDeltaTime = 1.0f / 60.0f;
@@ -139,29 +144,33 @@ private:
 
 	static constexpr float kBlockConnectDistance = 3.2f;
 	static constexpr float kBlockDisconnectDistance = 4.8f;
+	static constexpr float kBlockPullSpeedPerFrame = 0.08f;
+	static constexpr float kBlockContactSkin = 0.03f;
+	static constexpr float kSwitchSnapCenterTolerance = 0.70f;
+	static constexpr float kSwitchSnapPlayerClearance = 0.25f;
 
-	static constexpr float kStageMinX = -10.4f;
-	static constexpr float kStageMaxX = 10.4f;
-	static constexpr float kStageMinZ = -4.4f;
-	static constexpr float kStageMaxZ = 4.4f;
+	static constexpr float kStageMinX = -11.4f;
+	static constexpr float kStageMaxX = 12.8f;
+	static constexpr float kStageMinZ = -5.9f;
+	static constexpr float kStageMaxZ = 5.9f;
 	static constexpr float kStageMaxY = 12.0f;
 	static constexpr float kFallResetY = -6.0f;
 
-	const KamataEngine::Vector3 kPlayerStartPosition_ = {-8.0f, 0.6f, 0.0f};
-	const KamataEngine::Vector3 kLeftRespawnPosition_ = {-7.0f, 0.6f, 0.0f};
+	const KamataEngine::Vector3 kPlayerStartPosition_ = {-8.5f, 0.6f, 0.0f};
+	const KamataEngine::Vector3 kLeftRespawnPosition_ = {-8.0f, 0.6f, 0.0f};
 	const KamataEngine::Vector3 kRightRespawnPosition_ = {6.0f, 0.6f, 0.0f};
 	const KamataEngine::Vector3 kAnchorPosition_ = {0.0f, 6.5f, 0.0f};
 
 	// 右側足場のギミック配置
-	const KamataEngine::Vector3 kBlockStartPosition_ = {5.3f, 0.8f, 2.5f};
+	const KamataEngine::Vector3 kBlockStartPosition_ = {5.6f, 0.8f, 2.8f};
 	const KamataEngine::Vector3 kBlockScale_ = {0.8f, 0.8f, 0.8f};
-	const KamataEngine::Vector3 kSwitchPosition_ = {6.6f, 0.10f, -2.5f};
+	const KamataEngine::Vector3 kSwitchPosition_ = {7.0f, 0.10f, -3.3f};
 	const KamataEngine::Vector3 kSwitchScale_ = {1.15f, 0.10f, 1.15f};
-	const KamataEngine::Vector3 kDoorPosition_ = {8.3f, 1.5f, 0.0f};
-	const KamataEngine::Vector3 kDoorScale_ = {0.35f, 1.5f, 1.0f};
+	const KamataEngine::Vector3 kDoorPosition_ = {9.6f, 1.5f, 0.0f};
+	const KamataEngine::Vector3 kDoorScale_ = {0.35f, 1.5f, 1.20f};
 
 	// ドアの奥にある地面GOAL
-	const KamataEngine::Vector3 kGoalPosition_ = {9.65f, 0.10f, 0.0f};
-	const KamataEngine::Vector3 kGoalScale_ = {0.80f, 0.10f, 1.10f};
-	const KamataEngine::Vector3 kGoalTriggerHalfSize_ = {0.70f, 0.80f, 0.90f};
+	const KamataEngine::Vector3 kGoalPosition_ = {11.55f, 0.10f, 0.0f};
+	const KamataEngine::Vector3 kGoalScale_ = {1.00f, 0.10f, 1.20f};
+	const KamataEngine::Vector3 kGoalTriggerHalfSize_ = {0.80f, 0.80f, 1.00f};
 };

@@ -24,8 +24,8 @@ void SwingDemoScene::Initialize() {
 	doorModel_ = Model::CreateFromOBJ("cube");
 
 	camera_->Initialize();
-	camera_->translation_ = {0.0f, 23.0f, -28.0f};
-	camera_->rotation_ = {0.68f, 0.0f, 0.0f};
+	camera_->translation_ = {0.6f, 22.0f, -27.5f};
+	camera_->rotation_ = {0.66f, 0.0f, 0.0f};
 	camera_->UpdateMatrix();
 
 	player_->Initialize(kPlayerStartPosition_);
@@ -36,15 +36,16 @@ void SwingDemoScene::Initialize() {
 		kAnchorPosition_,
 		{0.45f, 0.45f, 0.45f});
 
-	// 左右の足場。中央は大きな落下穴。
+	// 左右の足場。外壁へ少し重ねて背景が見える隙間を消し、
+	// 中央の落下穴は摆荡しやすい幅まで少し縮める。
 	const Vector3 floorPositions[kFloorCount] = {
 		{-7.5f, -0.15f, 0.0f},
-		{7.5f, -0.15f, 0.0f},
+		{8.25f, -0.15f, 0.0f},
 	};
 
 	const Vector3 floorScales[kFloorCount] = {
-		{3.2f, 0.15f, 5.0f},
-		{3.2f, 0.15f, 5.0f},
+		{4.45f, 0.15f, 6.15f},
+		{4.95f, 0.15f, 6.15f},
 	};
 
 	for (int i = 0; i < kFloorCount; ++i) {
@@ -59,24 +60,25 @@ void SwingDemoScene::Initialize() {
 	}
 
 	// 外周4枚 + 右足場の縦向き仕切り壁2枚。
-	// x=8.3 のラインで右足場を「机关区」と「GOAL区」に分け、
-	// z=-1.0～1.0 の中央だけをドア通路として空ける。
+	// ステージ全体と右足場を広げ、机关の下側にも十分な操作空間を確保する。
+	// x=9.6 のラインで右足場を「机关区」と「GOAL区」に分け、
+	// z=-1.2～1.2 の中央だけをドア通路として空ける。
 	const Vector3 wallPositions[kWallCount] = {
-		{-10.8f, 0.5f, 0.0f},
-		{10.8f, 0.5f, 0.0f},
-		{0.0f, 0.5f, -4.8f},
-		{0.0f, 0.5f, 4.8f},
-		{8.3f, 1.5f, -3.0f},
-		{8.3f, 1.5f, 3.0f},
+		{-12.0f, 0.5f, 0.0f},
+		{13.4f, 0.5f, 0.0f},
+		{0.7f, 0.5f, -6.3f},
+		{0.7f, 0.5f, 6.3f},
+		{9.6f, 1.5f, -3.75f},
+		{9.6f, 1.5f, 3.75f},
 	};
 
 	const Vector3 wallScales[kWallCount] = {
-		{0.25f, 0.5f, 5.0f},
-		{0.25f, 0.5f, 5.0f},
-		{11.0f, 0.5f, 0.25f},
-		{11.0f, 0.5f, 0.25f},
-		{0.35f, 1.5f, 2.0f},
-		{0.35f, 1.5f, 2.0f},
+		{0.25f, 0.5f, 6.5f},
+		{0.25f, 0.5f, 6.5f},
+		{13.0f, 0.5f, 0.25f},
+		{13.0f, 0.5f, 0.25f},
+		{0.35f, 1.5f, 2.55f},
+		{0.35f, 1.5f, 2.55f},
 	};
 
 	for (int i = 0; i < kWallCount; ++i) {
@@ -152,7 +154,7 @@ void SwingDemoScene::Initialize() {
 	blockRopeColor_.SetColor({1.0f, 0.60f, 0.10f, 1.0f});
 
 	AnchorSwingGimmick::Settings settings{};
-	settings.connectDistance = 7.2f;
+	settings.connectDistance = 7.5f;
 	settings.ropeLength = 5.8f;
 	settings.gravity = kGravity;
 	settings.swingAssist = 7.0f;
@@ -232,7 +234,7 @@ void SwingDemoScene::Draw() {
 			&ropeColor_);
 	}
 
-	if (movableBlock_->IsConnected()) {
+	if (blockPulling_ || movableBlock_->IsConnected()) {
 		ropeModel_->Draw(
 			blockRopeTransform_,
 			*camera_,
@@ -316,9 +318,9 @@ void SwingDemoScene::UpdateConnection() {
 		return;
 	}
 
-	// すでにブロック接続中ならEで解除。
-	if (movableBlock_->IsConnected()) {
-		movableBlock_->SetConnected(false);
+	// 箱を引き寄せ中、または接続済みならEでもう一度解除する。
+	if (blockPulling_ || movableBlock_->IsConnected()) {
+		CancelBlockConnection();
 		return;
 	}
 
@@ -328,19 +330,21 @@ void SwingDemoScene::UpdateConnection() {
 		return;
 	}
 
-	// 右足場でブロックが近い場合はブロック接続を優先する。
+	// 右足場で箱が近い場合は箱接続を優先する。
+	// 第一关と同様、すぐ接続完了にはせず「お互いに引き寄せる」状態へ入る。
 	if (!movableBlock_->IsLocked() && IsPlayerGrounded()) {
 		const float blockDistance = Collision::Distance(
 			player_->GetPosition(),
 			movableBlock_->GetPosition());
 
 		if (blockDistance <= kBlockConnectDistance) {
-			movableBlock_->SetConnected(true);
+			blockPulling_ = true;
+			movableBlock_->SetPullingVisual(true);
 			return;
 		}
 	}
 
-	// ブロック対象がなければ従来通りアンカー接続を試す。
+	// 箱対象がなければ従来通りアンカー接続を試す。
 	anchorSwing_->ToggleConnection(
 		kAnchorPosition_,
 		player_->GetPosition());
@@ -469,14 +473,27 @@ void SwingDemoScene::PrepareBlockObstacles() {
 	}
 
 	// ブロックが右側足場から落ちないための見えない境界。
+	// 床AABBから境界位置を作ることで、ステージ幅を変更しても
+	// 見た目と当たり判定がずれないようにする。
+	const Collision::AABB& rightFloor = floorAABBs_[1];
+	const float floorCenterX = (rightFloor.min.x + rightFloor.max.x) * 0.5f;
+	const float floorCenterZ = (rightFloor.min.z + rightFloor.max.z) * 0.5f;
+	const float floorHalfX = (rightFloor.max.x - rightFloor.min.x) * 0.5f;
+	const float floorHalfZ = (rightFloor.max.z - rightFloor.min.z) * 0.5f;
+	constexpr float kBorderHalfThickness = 0.20f;
+
 	movableBlock_->AddObstacle(Collision::MakeAABB(
-		{4.05f, 1.0f, 0.0f}, {0.20f, 1.0f, 5.0f}));
+		{rightFloor.min.x - kBorderHalfThickness, 1.0f, floorCenterZ},
+		{kBorderHalfThickness, 1.0f, floorHalfZ}));
 	movableBlock_->AddObstacle(Collision::MakeAABB(
-		{10.95f, 1.0f, 0.0f}, {0.20f, 1.0f, 5.0f}));
+		{rightFloor.max.x + kBorderHalfThickness, 1.0f, floorCenterZ},
+		{kBorderHalfThickness, 1.0f, floorHalfZ}));
 	movableBlock_->AddObstacle(Collision::MakeAABB(
-		{7.5f, 1.0f, -4.75f}, {3.5f, 1.0f, 0.20f}));
+		{floorCenterX, 1.0f, rightFloor.min.z - kBorderHalfThickness},
+		{floorHalfX, 1.0f, kBorderHalfThickness}));
 	movableBlock_->AddObstacle(Collision::MakeAABB(
-		{7.5f, 1.0f, 4.75f}, {3.5f, 1.0f, 0.20f}));
+		{floorCenterX, 1.0f, rightFloor.max.z + kBorderHalfThickness},
+		{floorHalfX, 1.0f, kBorderHalfThickness}));
 }
 
 Vector3 SwingDemoScene::UpdateConnectedBlockMovement(
@@ -551,6 +568,162 @@ Vector3 SwingDemoScene::UpdateConnectedBlockMovement(
 	return actualPlayerMove;
 }
 
+Vector3 SwingDemoScene::UpdateBlockPullTogether() {
+	if (player_ == nullptr || movableBlock_ == nullptr || !blockPulling_ ||
+		movableBlock_->IsLocked()) {
+		CancelBlockConnection();
+		return {};
+	}
+
+	// 地面から外れた状態では箱の引き寄せを継続しない。
+	if (!IsPlayerGrounded()) {
+		CancelBlockConnection();
+		return {};
+	}
+
+	Vector3 playerPosition = player_->GetPosition();
+	Vector3 blockPosition = movableBlock_->GetPosition();
+	Vector3 diff = {
+		blockPosition.x - playerPosition.x,
+		0.0f,
+		blockPosition.z - playerPosition.z,
+	};
+
+	float distanceXZ = std::sqrt(diff.x * diff.x + diff.z * diff.z);
+	if (distanceXZ <= 0.0001f) {
+		CancelBlockConnection();
+		return {};
+	}
+
+	Vector3 direction = {
+		diff.x / distanceXZ,
+		0.0f,
+		diff.z / distanceXZ,
+	};
+
+	float targetDistance =
+		CalculateBlockContactDistanceXZ(direction) + kBlockContactSkin;
+	float remainingDistance = distanceXZ - targetDistance;
+
+	if (remainingDistance <= 0.005f) {
+		blockPulling_ = false;
+		movableBlock_->SetPullingVisual(false);
+		movableBlock_->SetConnected(true);
+		return {};
+	}
+
+	PrepareBlockObstacles();
+
+	// 第一关と同じ感覚になるよう、箱とPlayerを両側から近づける。
+	const float blockStep = (std::min)(
+		kBlockPullSpeedPerFrame,
+		remainingDistance * 0.5f);
+
+	movableBlock_->MoveBy({
+		-direction.x * blockStep,
+		0.0f,
+		-direction.z * blockStep,
+	});
+
+	// 箱が動いた後の距離を再計算してPlayer側も近づける。
+	playerPosition = player_->GetPosition();
+	blockPosition = movableBlock_->GetPosition();
+	diff = {
+		blockPosition.x - playerPosition.x,
+		0.0f,
+		blockPosition.z - playerPosition.z,
+	};
+	distanceXZ = std::sqrt(diff.x * diff.x + diff.z * diff.z);
+
+	if (distanceXZ <= 0.0001f) {
+		CancelBlockConnection();
+		return {};
+	}
+
+	direction = {
+		diff.x / distanceXZ,
+		0.0f,
+		diff.z / distanceXZ,
+	};
+	targetDistance =
+		CalculateBlockContactDistanceXZ(direction) + kBlockContactSkin;
+	remainingDistance = distanceXZ - targetDistance;
+
+	Vector3 actualPlayerMove{};
+	if (remainingDistance > 0.0f) {
+		const float playerStep = (std::min)(
+			kBlockPullSpeedPerFrame,
+			remainingDistance);
+		actualPlayerMove = MoveGroundPlayerWithCollision({
+			direction.x * playerStep,
+			0.0f,
+			direction.z * playerStep,
+		}, true);
+	}
+
+	playerPosition = player_->GetPosition();
+	blockPosition = movableBlock_->GetPosition();
+	diff = {
+		blockPosition.x - playerPosition.x,
+		0.0f,
+		blockPosition.z - playerPosition.z,
+	};
+	distanceXZ = std::sqrt(diff.x * diff.x + diff.z * diff.z);
+
+	if (distanceXZ > 0.0001f) {
+		direction = {
+			diff.x / distanceXZ,
+			0.0f,
+			diff.z / distanceXZ,
+		};
+		targetDistance =
+			CalculateBlockContactDistanceXZ(direction) + kBlockContactSkin;
+
+		if (distanceXZ <= targetDistance + 0.01f) {
+			blockPulling_ = false;
+			movableBlock_->SetPullingVisual(false);
+			movableBlock_->SetConnected(true);
+		}
+	}
+
+	return actualPlayerMove;
+}
+
+float SwingDemoScene::CalculateBlockContactDistanceXZ(
+    const Vector3& direction) const {
+
+	if (player_ == nullptr || movableBlock_ == nullptr) {
+		return 0.0f;
+	}
+
+	const Vector3& playerHalfSize = player_->GetHalfSize();
+	const Vector3& blockHalfSize = movableBlock_->GetHalfSize();
+	const float sumHalfX = playerHalfSize.x + blockHalfSize.x;
+	const float sumHalfZ = playerHalfSize.z + blockHalfSize.z;
+	const float absX = std::abs(direction.x);
+	const float absZ = std::abs(direction.z);
+
+	float contactX = 100000.0f;
+	float contactZ = 100000.0f;
+	if (absX > 0.0001f) {
+		contactX = sumHalfX / absX;
+	}
+	if (absZ > 0.0001f) {
+		contactZ = sumHalfZ / absZ;
+	}
+
+	const float result = (std::min)(contactX, contactZ);
+	return result >= 99999.0f ? sumHalfX : result;
+}
+
+void SwingDemoScene::CancelBlockConnection() {
+	blockPulling_ = false;
+	if (movableBlock_ != nullptr) {
+		movableBlock_->SetPullingVisual(false);
+		movableBlock_->SetConnected(false);
+	}
+}
+
 void SwingDemoScene::UpdatePlayer() {
 	if (player_ == nullptr || anchorSwing_ == nullptr || movableBlock_ == nullptr) {
 		return;
@@ -562,8 +735,8 @@ void SwingDemoScene::UpdatePlayer() {
 
 	if (anchorSwing_->IsConnected()) {
 		// アンカー接続中はブロック操作を解除する。
-		if (movableBlock_->IsConnected()) {
-			movableBlock_->SetConnected(false);
+		if (blockPulling_ || movableBlock_->IsConnected()) {
+			CancelBlockConnection();
 		}
 
 		anchorSwing_->Update(
@@ -586,7 +759,9 @@ void SwingDemoScene::UpdatePlayer() {
 			const Vector3 frameMove = player_->GetInputMove();
 			Vector3 actualMove{};
 
-			if (movableBlock_->IsConnected()) {
+			if (blockPulling_) {
+				actualMove = UpdateBlockPullTogether();
+			} else if (movableBlock_->IsConnected()) {
 				actualMove = UpdateConnectedBlockMovement(frameMove);
 			} else {
 				actualMove = MoveGroundPlayerWithCollision(frameMove);
@@ -597,8 +772,8 @@ void SwingDemoScene::UpdatePlayer() {
 			playerVelocity_.z = actualMove.z / kDeltaTime;
 		} else {
 			// 足場から離れたらブロック接続は解除する。
-			if (movableBlock_->IsConnected()) {
-				movableBlock_->SetConnected(false);
+			if (blockPulling_ || movableBlock_->IsConnected()) {
+				CancelBlockConnection();
 			}
 
 			const float moveLengthXZ = std::sqrt(
@@ -678,6 +853,14 @@ void SwingDemoScene::UpdateSwitch() {
 		return;
 	}
 
+	// 「少し触れただけ」で急に吸着しないように、
+	// 箱の中心が机关中央付近まで入った時だけスナップ可能にする。
+	const Vector3& blockPosition = movableBlock_->GetPosition();
+	if (std::abs(blockPosition.x - kSwitchPosition_.x) > kSwitchSnapCenterTolerance ||
+		std::abs(blockPosition.z - kSwitchPosition_.z) > kSwitchSnapCenterTolerance) {
+		return;
+	}
+
 	const Vector3 snapPosition = {
 		kSwitchPosition_.x,
 		kBlockScale_.y,
@@ -688,14 +871,34 @@ void SwingDemoScene::UpdateSwitch() {
 		snapPosition,
 		movableBlock_->GetHalfSize());
 
-	// プレイヤーがスイッチ上（＝ブロックの吸着先）にいる間は
-	// スナップさせない。プレイヤーが離れてから固定する。
+	// スナップ先が壁や閉じたドアと重なる場合は固定しない。
+	// 机关配置を後から調整しても、壁越し吸着が起きないようにする。
+	for (int i = 0; i < kWallCount; ++i) {
+		if (Collision::IsOverlap(snapAABB, wallAABBs_[i])) {
+			return;
+		}
+	}
+	if (door_ != nullptr && door_->IsBlocking() &&
+		Collision::IsOverlap(snapAABB, door_->GetAABB())) {
+		return;
+	}
+
+	// プレイヤーが机关の下側など吸着先のすぐ近くにいる場合は、
+	// 箱をスナップしてプレイヤーへ食い込ませない。少し余裕を持たせる。
+	Collision::AABB playerClearanceAABB = snapAABB;
+	playerClearanceAABB.min.x -= kSwitchSnapPlayerClearance;
+	playerClearanceAABB.max.x += kSwitchSnapPlayerClearance;
+	playerClearanceAABB.min.z -= kSwitchSnapPlayerClearance;
+	playerClearanceAABB.max.z += kSwitchSnapPlayerClearance;
+
 	if (player_ != nullptr &&
-		Collision::IsOverlapXZ(player_->GetAABB(), snapAABB)) {
+		Collision::IsOverlap(player_->GetAABB(), playerClearanceAABB)) {
 		return;
 	}
 
 	// ブロックをスイッチ中央へ固定。
+	blockPulling_ = false;
+	movableBlock_->SetPullingVisual(false);
 	movableBlock_->SnapAndLock(snapPosition);
 
 	switchActivated_ = true;
@@ -753,7 +956,7 @@ void SwingDemoScene::UpdateRope() {
 
 void SwingDemoScene::UpdateBlockRope() {
 	if (player_ == nullptr || movableBlock_ == nullptr ||
-		!movableBlock_->IsConnected()) {
+		(!blockPulling_ && !movableBlock_->IsConnected())) {
 		return;
 	}
 
@@ -823,8 +1026,9 @@ void SwingDemoScene::UpdateGoal() {
 	if (IsPlayerInsideGoal()) {
 		isClear_ = true;
 		anchorSwing_->Disconnect();
-		if (movableBlock_ != nullptr && movableBlock_->IsConnected()) {
-			movableBlock_->SetConnected(false);
+		if (movableBlock_ != nullptr &&
+			(blockPulling_ || movableBlock_->IsConnected())) {
+			CancelBlockConnection();
 		}
 		playerVelocity_ = {};
 
@@ -1175,7 +1379,7 @@ Vector3 SwingDemoScene::FindSafeRespawnPosition() const {
 			safeRespawnPosition_.z + offset.z,
 		};
 
-		if (floorIndex == 1 && candidate.x > 7.35f) {
+		if (floorIndex == 1 && candidate.x > 8.55f) {
 			continue;
 		}
 
@@ -1187,7 +1391,7 @@ Vector3 SwingDemoScene::FindSafeRespawnPosition() const {
 	// 通常は上の候補で必ず見つかる。万一すべて塞がれていた場合は、
 	// その足場のより外側の安全寄り位置を最後の候補にする。
 	const Vector3 fallback =
-		(floorIndex == 0) ? Vector3{-8.5f, 0.6f, 0.0f}
+		(floorIndex == 0) ? Vector3{-9.0f, 0.6f, 0.0f}
 		                  : Vector3{5.0f, 0.6f, 0.0f};
 
 	if (IsSafeRespawnPosition(fallback, floorIndex)) {
@@ -1203,8 +1407,9 @@ void SwingDemoScene::ResetPlayerAfterFall() {
 	}
 
 	anchorSwing_->Disconnect();
-	if (movableBlock_ != nullptr && movableBlock_->IsConnected()) {
-		movableBlock_->SetConnected(false);
+	if (movableBlock_ != nullptr &&
+		(blockPulling_ || movableBlock_->IsConnected())) {
+		CancelBlockConnection();
 	}
 	playerVelocity_ = {};
 
@@ -1223,6 +1428,7 @@ void SwingDemoScene::ResetDemo() {
 
 	anchorSwing_->Disconnect();
 	movableBlock_->Reset(kBlockStartPosition_);
+	blockPulling_ = false;
 	door_->Reset();
 
 	playerVelocity_ = {};
