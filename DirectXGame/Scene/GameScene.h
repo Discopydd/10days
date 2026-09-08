@@ -24,9 +24,6 @@ public:
 	void Draw();
 	void Finalize();
 
-	bool IsClear() const { return isClear_; }
-	void ResetStage() { ResetGame(); }
-
 private:
 	// --------------------------------------------------------
 	// 接続状態
