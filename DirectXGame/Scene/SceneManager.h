@@ -2,6 +2,7 @@
 
 #include "SceneType.h"
 
+class TitleScene;
 class GameScene;
 class LevelSelectScene;
 class SwingDemoScene;
@@ -20,6 +21,7 @@ private:
 private:
 	SceneType currentScene_ = SceneType::kNone;
 
+	TitleScene* titleScene_ = nullptr;
 	GameScene* gameScene_ = nullptr;
 	LevelSelectScene* levelSelectScene_ = nullptr;
 	SwingDemoScene* swingScene_ = nullptr;

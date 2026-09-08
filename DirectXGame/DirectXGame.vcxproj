@@ -183,6 +183,7 @@ xcopy "$(ProjectDir)..\External\KamataEngine\shaders" "$(ProjectDir)Resources\En
     <ClCompile Include="Gimmick\SwitchDoorGimmick.cpp" />
     <ClCompile Include="Gimmick\AnchorSwingGimmick.cpp" />
     <ClCompile Include="Scene\GameScene.cpp" />
+    <ClCompile Include="Scene\TitleScene.cpp" />
     <ClCompile Include="Scene\LevelSelectScene.cpp" />
     <ClCompile Include="Scene\SceneManager.cpp" />
     <ClCompile Include="Demo\SwingDemoScene.cpp" />
@@ -197,6 +198,7 @@ xcopy "$(ProjectDir)..\External\KamataEngine\shaders" "$(ProjectDir)Resources\En
     <ClInclude Include="Gimmick\SwitchDoorGimmick.h" />
     <ClInclude Include="Gimmick\AnchorSwingGimmick.h" />
     <ClInclude Include="Scene\GameScene.h" />
+    <ClInclude Include="Scene\TitleScene.h" />
     <ClInclude Include="Scene\LevelSelectScene.h" />
     <ClInclude Include="Scene\SceneManager.h" />
     <ClInclude Include="Scene\SceneType.h" />

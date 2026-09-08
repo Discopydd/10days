@@ -1,15 +1,30 @@
 #include "SceneManager.h"
 
 #include "GameScene.h"
+#include "TitleScene.h"
 #include "LevelSelectScene.h"
 #include "../Demo/SwingDemoScene.h"
 
 void SceneManager::Initialize() {
-	ChangeScene(SceneType::kGame);
+	ChangeScene(SceneType::kTitle);
 }
 
 bool SceneManager::Update() {
 	switch (currentScene_) {
+	case SceneType::kTitle: {
+		if (titleScene_ == nullptr || !titleScene_->Update()) {
+			return false;
+		}
+
+		const SceneType requestedScene =
+			titleScene_->GetRequestedScene();
+
+		if (requestedScene != SceneType::kNone) {
+			ChangeScene(requestedScene);
+		}
+		break;
+	}
+
 	case SceneType::kGame: {
 		if (gameScene_ == nullptr || !gameScene_->Update()) {
 			return false;
@@ -56,6 +71,12 @@ bool SceneManager::Update() {
 
 void SceneManager::Draw() {
 	switch (currentScene_) {
+	case SceneType::kTitle:
+		if (titleScene_ != nullptr) {
+			titleScene_->Draw();
+		}
+		break;
+
 	case SceneType::kGame:
 		if (gameScene_ != nullptr) {
 			gameScene_->Draw();
@@ -88,6 +109,15 @@ void SceneManager::ChangeScene(SceneType nextScene) {
 	currentScene_ = nextScene;
 
 	switch (currentScene_) {
+	case SceneType::kTitle:
+		if (titleScene_ == nullptr) {
+			titleScene_ = new TitleScene();
+			titleScene_->Initialize();
+		} else {
+			titleScene_->Reset();
+		}
+		break;
+
 	case SceneType::kGame:
 		if (gameScene_ == nullptr) {
 			gameScene_ = new GameScene();
@@ -121,6 +151,12 @@ void SceneManager::ChangeScene(SceneType nextScene) {
 }
 
 void SceneManager::DeleteCurrentScene() {
+	if (titleScene_ != nullptr) {
+		titleScene_->Finalize();
+		delete titleScene_;
+		titleScene_ = nullptr;
+	}
+
 	if (gameScene_ != nullptr) {
 		gameScene_->Finalize();
 		delete gameScene_;

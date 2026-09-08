@@ -2,6 +2,7 @@
 
 enum class SceneType {
 	kNone,
+	kTitle,
 	kGame,
 	kLevelSelect,
 	kSwing,
