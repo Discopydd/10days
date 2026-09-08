@@ -31,14 +31,15 @@ void SwingDemoScene::Initialize() {
 		kAnchorPosition_,
 		{0.45f, 0.45f, 0.45f});
 
+	// 左右の足場を少し外側へ寄せ、中央の落下穴を広げる
 	const Vector3 floorPositions[kFloorCount] = {
-		{-7.0f, -0.15f, 0.0f},
-		{7.0f, -0.15f, 0.0f},
+		{-7.5f, -0.15f, 0.0f},
+		{7.5f, -0.15f, 0.0f},
 	};
 
 	const Vector3 floorScales[kFloorCount] = {
-		{4.0f, 0.15f, 5.0f},
-		{4.0f, 0.15f, 5.0f},
+		{3.2f, 0.15f, 5.0f},
+		{3.2f, 0.15f, 5.0f},
 	};
 
 	for (int i = 0; i < kFloorCount; ++i) {
@@ -327,7 +328,7 @@ void SwingDemoScene::UpdatePlayer() {
 	ApplyStageBounds(playerPosition);
 
 	if (playerPosition.y < kFallResetY) {
-		ResetPlayerAfterFall(playerPosition);
+		ResetPlayerAfterFall();
 		return;
 	}
 
@@ -549,6 +550,12 @@ bool SwingDemoScene::ResolveFloorLanding(
 		if (wasAboveFloor && reachedFloor) {
 			position.y = standingY;
 			playerVelocity_.y = 0.0f;
+
+			// 実際に着地した足場だけを次の復活地点として記録する。
+			// 空中で中央線を越えただけでは右側復活にならない。
+			safeRespawnPosition_ =
+				(i == 0) ? kLeftRespawnPosition_ : kRightRespawnPosition_;
+
 			return true;
 		}
 	}
@@ -572,9 +579,7 @@ bool SwingDemoScene::IsPlayerInsideGoal() const {
 		position.z <= goalAABB_.max.z;
 }
 
-void SwingDemoScene::ResetPlayerAfterFall(
-    const Vector3& fallPosition) {
-
+void SwingDemoScene::ResetPlayerAfterFall() {
 	if (player_ == nullptr || anchorSwing_ == nullptr) {
 		return;
 	}
@@ -582,11 +587,8 @@ void SwingDemoScene::ResetPlayerAfterFall(
 	anchorSwing_->Disconnect();
 	playerVelocity_ = {};
 
-	if (fallPosition.x < 0.0f) {
-		player_->Reset(kLeftRespawnPosition_);
-	} else {
-		player_->Reset(kRightRespawnPosition_);
-	}
+	// 落下中のX座標ではなく、最後に安全に着地した足場へ戻す。
+	player_->Reset(safeRespawnPosition_);
 
 	UpdateAnchorColor();
 }
@@ -598,6 +600,7 @@ void SwingDemoScene::ResetDemo() {
 
 	anchorSwing_->Disconnect();
 	playerVelocity_ = {};
+	safeRespawnPosition_ = kLeftRespawnPosition_;
 	player_->Reset(kPlayerStartPosition_);
 
 	isClear_ = false;

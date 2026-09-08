@@ -52,7 +52,7 @@ private:
 	    const KamataEngine::Vector3& previousPosition,
 	    KamataEngine::Vector3& position);
 	bool IsPlayerInsideGoal() const;
-	void ResetPlayerAfterFall(const KamataEngine::Vector3& fallPosition);
+	void ResetPlayerAfterFall();
 	void ResetDemo();
 
 private:
@@ -89,6 +89,7 @@ private:
 	KamataEngine::ObjectColor ropeColor_;
 
 	KamataEngine::Vector3 playerVelocity_{};
+	KamataEngine::Vector3 safeRespawnPosition_{};
 	bool isClear_ = false;
 
 	static constexpr float kDeltaTime = 1.0f / 60.0f;
@@ -107,10 +108,10 @@ private:
 	static constexpr float kFallResetY = -6.0f;
 
 	const KamataEngine::Vector3 kPlayerStartPosition_ = {-8.0f, 0.6f, 0.0f};
-	const KamataEngine::Vector3 kLeftRespawnPosition_ = {-4.0f, 0.6f, 0.0f};
-	const KamataEngine::Vector3 kRightRespawnPosition_ = {4.0f, 0.6f, 0.0f};
+	const KamataEngine::Vector3 kLeftRespawnPosition_ = {-7.0f, 0.6f, 0.0f};
+	const KamataEngine::Vector3 kRightRespawnPosition_ = {7.0f, 0.6f, 0.0f};
 	const KamataEngine::Vector3 kAnchorPosition_ = {0.0f, 6.5f, 0.0f};
-	const KamataEngine::Vector3 kGoalPosition_ = {7.0f, 2.2f, 0.0f};
-	const KamataEngine::Vector3 kGoalScale_ = {1.1f, 1.0f, 1.2f};
-	const KamataEngine::Vector3 kGoalTriggerHalfSize_ = {0.75f, 0.65f, 0.85f};
+	const KamataEngine::Vector3 kGoalPosition_ = {7.2f, 0.10f, 0.0f};
+	const KamataEngine::Vector3 kGoalScale_ = {1.35f, 0.10f, 1.35f};
+	const KamataEngine::Vector3 kGoalTriggerHalfSize_ = {0.90f, 0.80f, 0.90f};
 };
