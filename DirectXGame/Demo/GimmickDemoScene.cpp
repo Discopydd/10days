@@ -14,10 +14,10 @@ void GimmickDemoScene::Initialize() {
 	// オブジェクトごとにModelを分けて生成する。
 	// --------------------------------------------------------
 	playerModel_ = Model::CreateSphere(12, 12);
-	blockModel_ = Model::CreateFromOBJ("cube");
+	blockModel_ = Model::CreateFromOBJ("cubu");
 	switchModel_ = Model::CreateFromOBJ("cube");
-	floorModel_ = Model::CreateFromOBJ("cube");
-	wallModel_ = Model::CreateFromOBJ("cube");
+	floorModel_ = Model::CreateFromOBJ("floorwood");
+	wallModel_ = Model::CreateFromOBJ("wallwood");
 	ropeModel_ = Model::CreateFromOBJ("cube");
 
 	// --------------------------------------------------------
@@ -74,7 +74,7 @@ void GimmickDemoScene::Initialize() {
 		{8.0f, 0.10f, 11.0f});
 
 	floorColor_.Initialize();
-	floorColor_.SetColor({0.55f, 0.55f, 0.55f, 1.0f});
+	floorColor_.SetColor({0.94f, 0.91f, 0.86f, 1.0f});
 
 	// --------------------------------------------------------
 	// 壁
@@ -101,7 +101,7 @@ void GimmickDemoScene::Initialize() {
 		{6.5f, 1.0f, 0.5f});
 
 	wallColor_.Initialize();
-	wallColor_.SetColor({0.25f, 0.25f, 0.3f, 1.0f});
+	wallColor_.SetColor({0.78f, 0.80f, 0.83f, 1.0f});
 
 	// ブロックの当たり判定へ壁を登録する
 	movableBlock_.AddObstacle(

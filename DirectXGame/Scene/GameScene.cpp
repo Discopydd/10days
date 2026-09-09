@@ -19,12 +19,12 @@ void GameScene::Initialize() {
 	// --------------------------------------------------------
 	// モデル
 	// --------------------------------------------------------
-	blockModel_ = Model::CreateFromOBJ("cube");
+	blockModel_ = Model::CreateFromOBJ("cubu");
 	switchModel_ = Model::CreateFromOBJ("cube");
 	doorModel_ = Model::CreateFromOBJ("cube");
 	goalModel_ = Model::CreateFromOBJ("cube");
-	floorModel_ = Model::CreateFromOBJ("cube");
-	wallModel_ = Model::CreateFromOBJ("cube");
+	floorModel_ = Model::CreateFromOBJ("floorwood");
+	wallModel_ = Model::CreateFromOBJ("wallwood");
 	ropeModel_ = Model::CreateFromOBJ("cube");
 
 	// --------------------------------------------------------
@@ -99,7 +99,7 @@ void GameScene::Initialize() {
 		{8.0f, 0.10f, 10.0f});
 
 	floorColor_.Initialize();
-	floorColor_.SetColor({0.55f, 0.55f, 0.55f, 1.0f});
+	floorColor_.SetColor({0.94f, 0.91f, 0.86f, 1.0f});
 
 	// --------------------------------------------------------
 	// 壁
@@ -138,7 +138,7 @@ void GameScene::Initialize() {
 	}
 
 	wallColor_.Initialize();
-	wallColor_.SetColor({0.25f, 0.25f, 0.30f, 1.0f});
+	wallColor_.SetColor({0.78f, 0.80f, 0.83f, 1.0f});
 
 	// --------------------------------------------------------
 	// 糸

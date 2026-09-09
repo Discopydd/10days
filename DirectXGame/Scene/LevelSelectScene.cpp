@@ -9,10 +9,10 @@ void LevelSelectScene::Initialize() {
 	input_ = Input::GetInstance();
 
 	panelModel_ = Model::CreateFromOBJ("cube");
-	blockIconModel_ = Model::CreateFromOBJ("cube");
+	blockIconModel_ = Model::CreateFromOBJ("cubu");
 	sphereModel_ = Model::CreateSphere(12, 12);
 	ropeModel_ = Model::CreateFromOBJ("cube");
-	floorModel_ = Model::CreateFromOBJ("cube");
+	floorModel_ = Model::CreateFromOBJ("floorwood");
 
 	camera_.Initialize();
 	camera_.translation_ = {0.0f, 8.0f, -18.0f};
@@ -66,7 +66,7 @@ void LevelSelectScene::Initialize() {
 	anchorIconColor_.SetColor({0.20f, 0.85f, 0.35f, 1.0f});
 	playerIconColor_.SetColor({0.20f, 0.70f, 1.0f, 1.0f});
 	ropeColor_.SetColor({1.0f, 0.90f, 0.20f, 1.0f});
-	floorColor_.SetColor({0.25f, 0.27f, 0.30f, 1.0f});
+	floorColor_.SetColor({0.94f, 0.91f, 0.86f, 1.0f});
 
 	selectedIndex_ = 0;
 	requestedScene_ = SceneType::kNone;

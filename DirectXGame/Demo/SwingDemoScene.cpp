@@ -14,12 +14,12 @@ void SwingDemoScene::Initialize() {
 	door_ = new SwitchDoorGimmick();
 	camera_ = new Camera();
 
-	anchorModel_ = Model::CreateSphere(12, 12);
-	floorModel_ = Model::CreateFromOBJ("cube");
-	wallModel_ = Model::CreateFromOBJ("cube");
+	anchorModel_ = Model::CreateFromOBJ("anchor");
+	floorModel_ = Model::CreateFromOBJ("floorwood");
+	wallModel_ = Model::CreateFromOBJ("wallwood");
 	goalModel_ = Model::CreateFromOBJ("cube");
 	ropeModel_ = Model::CreateFromOBJ("cube");
-	blockModel_ = Model::CreateFromOBJ("cube");
+	blockModel_ = Model::CreateFromOBJ("cubu");
 	switchModel_ = Model::CreateFromOBJ("cube");
 	doorModel_ = Model::CreateFromOBJ("cube");
 
@@ -34,7 +34,7 @@ void SwingDemoScene::Initialize() {
 	InitializeTransform(
 		anchorTransform_,
 		kAnchorPosition_,
-		{0.45f, 0.45f, 0.45f});
+		{0.55f, 0.55f, 0.55f});
 
 	// 左右の足場。外壁へ少し重ねて背景が見える隙間を消し、
 	// 中央の落下穴は摆荡しやすい幅まで少し縮める。
@@ -133,13 +133,13 @@ void SwingDemoScene::Initialize() {
 		{0.04f, 0.04f, 1.0f});
 
 	anchorColor_.Initialize();
-	anchorColor_.SetColor({1.0f, 0.25f, 0.20f, 1.0f});
+	anchorColor_.SetColor({1.0f, 1.0f, 1.0f, 1.0f});
 
 	floorColor_.Initialize();
-	floorColor_.SetColor({0.35f, 0.38f, 0.42f, 1.0f});
+	floorColor_.SetColor({0.94f, 0.91f, 0.86f, 1.0f});
 
 	wallColor_.Initialize();
-	wallColor_.SetColor({0.20f, 0.22f, 0.26f, 1.0f});
+	wallColor_.SetColor({0.78f, 0.80f, 0.83f, 1.0f});
 
 	switchColor_.Initialize();
 	switchColor_.SetColor({0.20f, 0.90f, 0.25f, 1.0f});
@@ -991,24 +991,12 @@ void SwingDemoScene::UpdateBlockRope() {
 }
 
 void SwingDemoScene::UpdateAnchorColor() {
-	if (player_ == nullptr || anchorSwing_ == nullptr) {
+	if (anchorSwing_ == nullptr) {
 		return;
 	}
 
-	if (anchorSwing_->IsConnected()) {
-		anchorColor_.SetColor({1.0f, 0.85f, 0.15f, 1.0f});
-		return;
-	}
-
-	const float distance = Collision::Distance(
-		player_->GetPosition(),
-		kAnchorPosition_);
-
-	if (distance <= anchorSwing_->GetSettings().connectDistance) {
-		anchorColor_.SetColor({0.20f, 1.0f, 0.35f, 1.0f});
-	} else {
-		anchorColor_.SetColor({1.0f, 0.25f, 0.20f, 1.0f});
-	}
+	// テクスチャの「霊」を見やすくするため、アンカー色は固定で白にする。
+	anchorColor_.SetColor({1.0f, 1.0f, 1.0f, 1.0f});
 }
 
 void SwingDemoScene::UpdateGoal() {

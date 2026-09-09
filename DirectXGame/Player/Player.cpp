@@ -7,16 +7,20 @@ using namespace KamataEngine;
 void Player::Initialize(const Vector3& position) {
 	input_ = Input::GetInstance();
 
-	// デモ用のプレイヤーモデル
-	model_ = Model::CreateSphere(12, 12);
+	// PLAYER.obj をプレイヤーモデルとして使用する
+	model_ = Model::CreateFromOBJ("PLAYER");
 
 	worldTransform_.Initialize();
 	worldTransform_.translation_ = position;
 	worldTransform_.scale_ = halfSize_;
+
+	worldTransform_.rotation_.y = 3.14159265f;
+
 	worldTransform_.UpdateMatarix();
 
 	objectColor_.Initialize();
-	objectColor_.SetColor({0.2f, 0.7f, 1.0f, 1.0f});
+	// テクスチャ本来の色をそのまま表示する
+	objectColor_.SetColor({1.0f, 1.0f, 1.0f, 1.0f});
 }
 
 void Player::Finalize() {
