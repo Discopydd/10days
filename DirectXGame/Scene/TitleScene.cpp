@@ -4,6 +4,10 @@ using namespace KamataEngine;
 
 void TitleScene::Initialize() {
 	input_ = Input::GetInstance();
+	audio_ = Audio::GetInstance();
+	if (audio_ != nullptr) {
+		decisionSoundHandle_ = audio_->LoadWave("SE/cursor.wav");
+	}
 
 	const uint32_t titleTextureHandle =
 		TextureManager::Load("title/title.png");
@@ -32,6 +36,10 @@ bool TitleScene::Update() {
 
 	if (!input_->TriggerKey(DIK_SPACE)) {
 		return true;
+	}
+
+	if (audio_ != nullptr) {
+		audio_->PlayWave(decisionSoundHandle_, false, 0.8f);
 	}
 
 	if (page_ == Page::kTitle) {

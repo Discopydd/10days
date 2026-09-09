@@ -11,7 +11,7 @@ int WINAPI WinMain(
 	_In_ LPSTR,
 	_In_ int) {
 
-	KamataEngine::Initialize(L"糸結び");
+	KamataEngine::Initialize(L"4044_糸結び");
 
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
 	Input* input = Input::GetInstance();

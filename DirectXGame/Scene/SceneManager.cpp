@@ -10,11 +10,20 @@
 
 using namespace KamataEngine;
 
+namespace {
+constexpr float kBgmVolume = 0.35f;
+constexpr float kInGameBgmVolume = 0.20f;
+} // namespace
+
 void SceneManager::Initialize() {
 	input_ = Input::GetInstance();
 	audio_ = Audio::GetInstance();
 	if (audio_ != nullptr) {
 		clearSoundHandle_ = audio_->LoadWave("clear.wav");
+		tabSoundHandle_ = audio_->LoadWave("SE/cursor.wav");
+		bgmSoundHandle_ = audio_->LoadWave("BGM/MusMus-BGM-173.wav");
+		bgmVoiceHandle_ = audio_->PlayWave(
+			bgmSoundHandle_, true, kBgmVolume);
 	}
 
 	const uint32_t howToTextureHandle =
@@ -64,6 +73,9 @@ bool SceneManager::Update() {
 	if (IsGameplayScene() && input_ != nullptr &&
 		input_->TriggerKey(DIK_TAB)) {
 		isHowToVisible_ = !isHowToVisible_;
+		if (audio_ != nullptr) {
+			audio_->PlayWave(tabSoundHandle_, false, 0.75f);
+		}
 		return true;
 	}
 
@@ -206,6 +218,9 @@ void SceneManager::DrawSprite() {
 
 void SceneManager::Finalize() {
 	DeleteCurrentScene();
+	if (audio_ != nullptr && bgmVoiceHandle_ != 0u) {
+		audio_->StopWave(bgmVoiceHandle_);
+	}
 
 	delete howToSprite_;
 	howToSprite_ = nullptr;
@@ -219,6 +234,8 @@ void SceneManager::Finalize() {
 	isClearVisible_ = false;
 	clearSpaceReady_ = false;
 	input_ = nullptr;
+	audio_ = nullptr;
+	bgmVoiceHandle_ = 0u;
 }
 
 void SceneManager::ChangeScene(SceneType nextScene) {
@@ -227,6 +244,11 @@ void SceneManager::ChangeScene(SceneType nextScene) {
 	isClearVisible_ = false;
 	clearSpaceReady_ = false;
 	currentScene_ = nextScene;
+	if (audio_ != nullptr && bgmVoiceHandle_ != 0u) {
+		audio_->SetVolume(
+			bgmVoiceHandle_,
+			IsGameplayScene() ? kInGameBgmVolume : kBgmVolume);
+	}
 
 	switch (currentScene_) {
 	case SceneType::kTitle:

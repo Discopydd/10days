@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include <KamataEngine.h>
 
 #include "SceneType.h"
@@ -25,6 +27,8 @@ private:
 
 private:
 	KamataEngine::Input* input_ = nullptr;
+	KamataEngine::Audio* audio_ = nullptr;
+	uint32_t cursorSoundHandle_ = 0u;
 
 	KamataEngine::Model* panelModel_ = nullptr;
 	KamataEngine::Model* blockIconModel_ = nullptr;

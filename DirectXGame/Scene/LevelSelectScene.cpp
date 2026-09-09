@@ -7,6 +7,10 @@ using namespace KamataEngine;
 
 void LevelSelectScene::Initialize() {
 	input_ = Input::GetInstance();
+	audio_ = Audio::GetInstance();
+	if (audio_ != nullptr) {
+		cursorSoundHandle_ = audio_->LoadWave("SE/cursor.wav");
+	}
 
 	panelModel_ = Model::CreateFromOBJ("select_panel");
 	blockIconModel_ = Model::CreateFromOBJ("cubu");
@@ -60,6 +64,9 @@ void LevelSelectScene::Initialize() {
 }
 
 bool LevelSelectScene::Update() {
+	const int previousSelectedIndex = selectedIndex_;
+	bool isDecisionMade = false;
+
 	if (input_->TriggerKey(DIK_A) || input_->TriggerKey(DIK_LEFT)) {
 		selectedIndex_ = (std::max)(0, selectedIndex_ - 1);
 		UpdateSelectionColor();
@@ -70,17 +77,35 @@ bool LevelSelectScene::Update() {
 		UpdateSelectionColor();
 	}
 
-	if (input_->TriggerKey(DIK_1)) { requestedScene_ = SceneType::kGame; }
-	if (input_->TriggerKey(DIK_2)) { requestedScene_ = SceneType::kSwing; }
-	if (input_->TriggerKey(DIK_3)) { requestedScene_ = SceneType::kThird; }
+	if (selectedIndex_ != previousSelectedIndex && audio_ != nullptr) {
+		audio_->PlayWave(cursorSoundHandle_, false, 0.65f);
+	}
+
+	if (input_->TriggerKey(DIK_1)) {
+		requestedScene_ = SceneType::kGame;
+		isDecisionMade = true;
+	}
+	if (input_->TriggerKey(DIK_2)) {
+		requestedScene_ = SceneType::kSwing;
+		isDecisionMade = true;
+	}
+	if (input_->TriggerKey(DIK_3)) {
+		requestedScene_ = SceneType::kThird;
+		isDecisionMade = true;
+	}
 
 	if (input_->TriggerKey(DIK_RETURN) || input_->TriggerKey(DIK_SPACE)) {
+		isDecisionMade = true;
 		switch (selectedIndex_) {
 		case 0: requestedScene_ = SceneType::kGame; break;
 		case 1: requestedScene_ = SceneType::kSwing; break;
 		case 2: requestedScene_ = SceneType::kThird; break;
 		default: break;
 		}
+	}
+
+	if (isDecisionMade && audio_ != nullptr) {
+		audio_->PlayWave(cursorSoundHandle_, false, 0.8f);
 	}
 
 	return true;

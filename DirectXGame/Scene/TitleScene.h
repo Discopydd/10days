@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include <KamataEngine.h>
 
 #include "SceneType.h"
@@ -29,6 +31,8 @@ private:
 
 private:
 	KamataEngine::Input* input_ = nullptr;
+	KamataEngine::Audio* audio_ = nullptr;
+	uint32_t decisionSoundHandle_ = 0u;
 	KamataEngine::Sprite* titleSprite_ = nullptr;
 	KamataEngine::Sprite* instructionSprite_ = nullptr;
 

@@ -37,6 +37,9 @@ private:
 	KamataEngine::Input* input_ = nullptr;
 	KamataEngine::Audio* audio_ = nullptr;
 	uint32_t clearSoundHandle_ = 0u;
+	uint32_t tabSoundHandle_ = 0u;
+	uint32_t bgmSoundHandle_ = 0u;
+	uint32_t bgmVoiceHandle_ = 0u;
 	KamataEngine::Sprite* howToSprite_ = nullptr;
 	bool isHowToVisible_ = false;
 	KamataEngine::Sprite* backgroundSprite_ = nullptr;
