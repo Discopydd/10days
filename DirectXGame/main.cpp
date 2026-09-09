@@ -39,6 +39,10 @@ int WINAPI WinMain(
 		sceneManager->Draw();
 		Model::PostDraw();
 
+		Sprite::PreDraw();
+		sceneManager->DrawSprite();
+		Sprite::PostDraw();
+
 		dxCommon->PostDraw();
 	}
 
