@@ -33,6 +33,8 @@ private:
 
 private:
 	KamataEngine::Input* input_ = nullptr;
+	KamataEngine::Audio* audio_ = nullptr;
+	uint32_t decisionSoundHandle_ = 0;
 	KamataEngine::Camera camera_;
 
 	KamataEngine::Model* titleModel_ = nullptr;

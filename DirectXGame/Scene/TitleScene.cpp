@@ -4,6 +4,8 @@ using namespace KamataEngine;
 
 void TitleScene::Initialize() {
 	input_ = Input::GetInstance();
+	audio_ = Audio::GetInstance();
+	decisionSoundHandle_ = audio_->LoadWave("SE/cursor.wav");
 
 	// 文字入りの一時テクスチャを貼ったcubeを画面正面に表示する。
 	titleModel_ = Model::CreateFromOBJ("title");
@@ -33,6 +35,8 @@ bool TitleScene::Update() {
 	if (!input_->TriggerKey(DIK_SPACE)) {
 		return true;
 	}
+
+	audio_->PlayWave(decisionSoundHandle_, false, 0.8f);
 
 	if (page_ == Page::kTitle) {
 		page_ = Page::kInstruction;

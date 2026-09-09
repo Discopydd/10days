@@ -9,6 +9,8 @@ void GameScene::Initialize() {
 	input_ = Input::GetInstance();
 	audio_ = Audio::GetInstance();
 	catchSoundHandle_ = audio_->LoadWave("SE/catch.wav");
+	openDoorSoundHandle_ = audio_->LoadWave("SE/opendoor.wav");
+	clearSoundHandle_ = audio_->LoadWave("SE/clear.wav");
 
 	camera_ = new Camera();
 	player_ = new Player();
@@ -180,6 +182,7 @@ bool GameScene::Update() {
 	const bool wasBlockConnected =
 		connectionState_ == ConnectionState::kConnected;
 	const bool wasSwitchActivated = switchActivated_;
+	const bool wasClear = isClear_;
 
 	UpdateConnectionInput();
 
@@ -235,6 +238,12 @@ bool GameScene::Update() {
 		 connectionState_ == ConnectionState::kConnected) ||
 		(!wasSwitchActivated && switchActivated_)) {
 		audio_->PlayWave(catchSoundHandle_, false, 0.7f);
+	}
+	if (!wasSwitchActivated && switchActivated_) {
+		audio_->PlayWave(openDoorSoundHandle_, false, 0.7f);
+	}
+	if (!wasClear && isClear_) {
+		audio_->PlayWave(clearSoundHandle_, false, 0.8f);
 	}
 
 	return true;

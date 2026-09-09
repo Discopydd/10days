@@ -7,6 +7,9 @@
 #include "../Demo/ThirdStageScene.h"
 
 void SceneManager::Initialize() {
+	audio_ = KamataEngine::Audio::GetInstance();
+	tabSoundHandle_ = audio_->LoadWave("SE/cursor.wav");
+
 	howToTextureHandle_ = KamataEngine::TextureManager::Load("Howto/Howto.png");
 	howToSprite_ = KamataEngine::Sprite::Create(
 		howToTextureHandle_,
@@ -33,6 +36,7 @@ bool SceneManager::Update() {
 		isHowToVisible_ = false;
 	} else if (KamataEngine::Input::GetInstance()->TriggerKey(DIK_TAB)) {
 		isHowToVisible_ = !isHowToVisible_;
+		audio_->PlayWave(tabSoundHandle_, false, 0.75f);
 	}
 
 	switch (currentScene_) {

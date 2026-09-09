@@ -35,5 +35,7 @@ private:
 	uint32_t howToTextureHandle_ = 0;
 	KamataEngine::Sprite* menuSprite_ = nullptr;
 	uint32_t menuTextureHandle_ = 0;
+	KamataEngine::Audio* audio_ = nullptr;
+	uint32_t tabSoundHandle_ = 0;
 	bool isHowToVisible_ = false;
 };

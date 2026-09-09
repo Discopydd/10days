@@ -25,6 +25,8 @@ private:
 
 private:
 	KamataEngine::Input* input_ = nullptr;
+	KamataEngine::Audio* audio_ = nullptr;
+	uint32_t cursorSoundHandle_ = 0;
 
 	KamataEngine::Model* panelModel_ = nullptr;
 	KamataEngine::Model* blockIconModel_ = nullptr;

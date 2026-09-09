@@ -10,6 +10,8 @@ void SwingDemoScene::Initialize() {
 	audio_ = Audio::GetInstance();
 	swingSoundHandle_ = audio_->LoadWave("SE/swing.wav");
 	catchSoundHandle_ = audio_->LoadWave("SE/catch.wav");
+	openDoorSoundHandle_ = audio_->LoadWave("SE/opendoor.wav");
+	clearSoundHandle_ = audio_->LoadWave("SE/clear.wav");
 
 	player_ = new Player();
 	anchorSwing_ = new AnchorSwingGimmick();
@@ -186,6 +188,7 @@ bool SwingDemoScene::Update() {
 	const bool wasSwingConnected = anchorSwing_->IsConnected();
 	const bool wasBlockConnected = movableBlock_->IsConnected();
 	const bool wasSwitchActivated = switchActivated_;
+	const bool wasClear = isClear_;
 
 	UpdateConnection();
 	UpdatePlayer();
@@ -211,6 +214,12 @@ bool SwingDemoScene::Update() {
 	if ((!wasBlockConnected && movableBlock_->IsConnected()) ||
 		(!wasSwitchActivated && switchActivated_)) {
 		audio_->PlayWave(catchSoundHandle_, false, 0.7f);
+	}
+	if (!wasSwitchActivated && switchActivated_) {
+		audio_->PlayWave(openDoorSoundHandle_, false, 0.7f);
+	}
+	if (!wasClear && isClear_) {
+		audio_->PlayWave(clearSoundHandle_, false, 0.8f);
 	}
 
 	return true;
