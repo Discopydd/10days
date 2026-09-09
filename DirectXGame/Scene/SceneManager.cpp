@@ -1,7 +1,6 @@
 #include "SceneManager.h"
 
 #include <KamataEngine.h>
-#include <cmath>
 
 #include "GameScene.h"
 #include "TitleScene.h"
@@ -39,14 +38,12 @@ void SceneManager::Initialize() {
 	if (clearSprite_ != nullptr) {
 		clearSprite_->SetSize({1280.0f, 720.0f});
 		// クリア画像の不透明度。背後に通過時のステージを残す。
-		constexpr float kClearOpacity = 1.0f;
+		constexpr float kClearOpacity = 0.65f;
 		clearSprite_->SetColor({1.0f, 1.0f, 1.0f, kClearOpacity});
 	}
 }
 
 bool SceneManager::Update() {
-	// ステージ停止中もUIだけ更新する。
-	UpdateSpacePrompt();
 	if (isClearVisible_) {
 		// クリア時に押していたSPACEでは進めず、押し直しを待つ。
 		if (input_ != nullptr) {
@@ -326,23 +323,7 @@ void SceneManager::ShowClearScreen() {
 }
 
 void SceneManager::ResetSpacePrompt() {
-	spacePromptStart_ = std::chrono::steady_clock::now();
 	if (spacePromptSprite_ != nullptr) {
 		spacePromptSprite_->SetPosition({460.0f, 520.0f});
 	}
-}
-
-void SceneManager::UpdateSpacePrompt() {
-	if (spacePromptSprite_ == nullptr) {
-		return;
-	}
-	// フレームレートに依存せず、2秒周期で上下8px揺らす。
-	constexpr double kPeriodSeconds = 2.0;
-	constexpr double kTwoPi = 6.283185307179586;
-	constexpr float kAmplitude = 8.0f;
-	const double elapsed = std::chrono::duration<double>(
-		std::chrono::steady_clock::now() - spacePromptStart_).count();
-	const double phase = std::fmod(elapsed, kPeriodSeconds) / kPeriodSeconds;
-	const float offset = kAmplitude * static_cast<float>(std::sin(phase * kTwoPi));
-	spacePromptSprite_->SetPosition({460.0f, 520.0f + offset});
 }

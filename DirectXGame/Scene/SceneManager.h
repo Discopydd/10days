@@ -1,7 +1,5 @@
 #pragma once
 
-#include <chrono>
-
 #include "SceneType.h"
 
 namespace KamataEngine {
@@ -29,7 +27,6 @@ private:
 	void DeleteCurrentScene();
 	bool IsGameplayScene() const;
 	void ShowClearScreen();
-	void UpdateSpacePrompt();
 	void ResetSpacePrompt();
 
 private:
@@ -42,7 +39,6 @@ private:
 	bool isClearVisible_ = false;
 	bool clearSpaceReady_ = false;
 	KamataEngine::Sprite* spacePromptSprite_ = nullptr;
-	std::chrono::steady_clock::time_point spacePromptStart_{};
 
 	TitleScene* titleScene_ = nullptr;
 	GameScene* gameScene_ = nullptr;
