@@ -82,3 +82,7 @@ Collision::AABB SwitchDoorGimmick::GetAABB() const {
 
 	return Collision::MakeAABB(worldTransform_.translation_, halfSize_);
 }
+
+const Vector3& SwitchDoorGimmick::GetCurrentPosition() const {
+	return worldTransform_.translation_;
+}

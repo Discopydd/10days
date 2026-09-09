@@ -10,12 +10,15 @@
 #include "../Player/Player.h"
 
 // ============================================================
-// 第3ステージ：スウィング + ブロック + 電源接続
+// 第3ステージ：電源 + ブロック解謎 → 最後にスウィング
 //
-// 前半：アンカーに接続して大きな穴をスウィングで越える。
-// 後半：右側足場でブロックをEで接続し、スイッチまで運ぶ。
-//       ブロックでスイッチを作動し、さらにFで電源とドアを接続する。
-//       両方の条件が揃うとドアが開き、奥のGOALへ到達するとクリア。
+// 第二关との差別化：
+// ・開始地点は大きな連続床。最初に落下穴を越える必要はない。
+// ・紫色の電源は実体のある障害物で、Player / Blockともに通り抜け不可。
+// ・EでBlockを引き寄せてスイッチへ運ぶ。
+// ・Fで紫色電源とドアを接続する。
+// ・「スイッチON + 電源接続」の両条件で中央ゲートが開く。
+// ・ゲートの奥へ進んだ後、最後に短い穴をアンカーでスウィングしてGOAL島へ渡る。
 // ============================================================
 class ThirdStageScene {
 public:
@@ -51,7 +54,7 @@ private:
 	KamataEngine::Vector3 GetDoorCenter() const;
 	void UpdateDoorActivation();
 
-	// 右側足場のブロック・スイッチ・ドア
+	// ゲート手前のブロック・スイッチ・ドア
 	void UpdateSwitch();
 	void PrepareBlockObstacles();
 	KamataEngine::Vector3 MoveGroundPlayerWithCollision(
@@ -90,6 +93,7 @@ private:
 	    const KamataEngine::Vector3& position,
 	    int floorIndex) const;
 	KamataEngine::Vector3 FindSafeRespawnPosition() const;
+	void UpdateSafeRespawnCheckpoint(const KamataEngine::Vector3& position);
 	void ResetPlayerAfterFall();
 	void ResetDemo();
 
@@ -119,7 +123,7 @@ private:
 	KamataEngine::WorldTransform floorTransforms_[kFloorCount];
 	Collision::AABB floorAABBs_[kFloorCount]{};
 
-	// 0～3: 外周 / 4～5: 右足場の仕切り壁
+	// 0～3: 外周 / 4～5: 中央ゲートの仕切り壁
 	static constexpr int kWallCount = 6;
 	KamataEngine::WorldTransform wallTransforms_[kWallCount];
 	Collision::AABB wallAABBs_[kWallCount]{};
@@ -176,32 +180,32 @@ private:
 	static constexpr float kSwitchSnapPlayerClearance = 0.25f;
 	static constexpr float kDeviceConnectDistance = 3.4f;
 
-	static constexpr float kStageMinX = -11.4f;
-	static constexpr float kStageMaxX = 12.8f;
-	static constexpr float kStageMinZ = -5.9f;
-	static constexpr float kStageMaxZ = 5.9f;
+	static constexpr float kStageMinX = -11.5f;
+	static constexpr float kStageMaxX = 13.0f;
+	static constexpr float kStageMinZ = -5.6f;
+	static constexpr float kStageMaxZ = 5.6f;
 	static constexpr float kStageMaxY = 12.0f;
 	static constexpr float kFallResetY = -6.0f;
 
-	const KamataEngine::Vector3 kPlayerStartPosition_ = {-8.5f, 0.6f, 0.0f};
-	const KamataEngine::Vector3 kLeftRespawnPosition_ = {-8.0f, 0.6f, 0.0f};
-	const KamataEngine::Vector3 kRightRespawnPosition_ = {6.0f, 0.6f, 0.0f};
-	const KamataEngine::Vector3 kAnchorPosition_ = {0.0f, 6.5f, 0.0f};
+	const KamataEngine::Vector3 kPlayerStartPosition_ = {-9.2f, 0.6f, 0.0f};
+	const KamataEngine::Vector3 kLeftRespawnPosition_ = {-9.0f, 0.6f, 0.0f};
+	const KamataEngine::Vector3 kRightRespawnPosition_ = {9.4f, 0.6f, 0.0f};
+	const KamataEngine::Vector3 kAnchorPosition_ = {6.0f, 6.5f, 0.0f};
 
-	// 右側足場のギミック配置
-	const KamataEngine::Vector3 kBlockStartPosition_ = {5.6f, 0.8f, 2.8f};
+	// ゲート手前の大平台に配置するギミック
+	const KamataEngine::Vector3 kBlockStartPosition_ = {-8.0f, 0.8f, 3.1f};
 	const KamataEngine::Vector3 kBlockScale_ = {0.8f, 0.8f, 0.8f};
-	const KamataEngine::Vector3 kSwitchPosition_ = {7.0f, 0.10f, -3.3f};
+	const KamataEngine::Vector3 kSwitchPosition_ = {-2.6f, 0.10f, -3.1f};
 	const KamataEngine::Vector3 kSwitchScale_ = {1.15f, 0.10f, 1.15f};
-	const KamataEngine::Vector3 kDoorPosition_ = {9.6f, 1.5f, 0.0f};
+	const KamataEngine::Vector3 kDoorPosition_ = {1.5f, 1.5f, 0.0f};
 	const KamataEngine::Vector3 kDoorScale_ = {0.35f, 1.5f, 1.20f};
 
 	// 第3关新增：紫色电源。Fで電源とドアを順番に選択して接続する。
-	const KamataEngine::Vector3 kPowerPosition_ = {5.2f, 0.75f, -2.6f};
+	const KamataEngine::Vector3 kPowerPosition_ = {-5.1f, 0.75f, 0.2f};
 	const KamataEngine::Vector3 kPowerScale_ = {0.70f, 0.70f, 0.70f};
 
-	// ドアの奥にある地面GOAL
-	const KamataEngine::Vector3 kGoalPosition_ = {11.55f, 0.10f, 0.0f};
+	// 最後のスウィング先にあるGOAL島
+	const KamataEngine::Vector3 kGoalPosition_ = {10.4f, 0.10f, 0.0f};
 	const KamataEngine::Vector3 kGoalScale_ = {1.00f, 0.10f, 1.20f};
 	const KamataEngine::Vector3 kGoalTriggerHalfSize_ = {0.80f, 0.80f, 1.00f};
 };
