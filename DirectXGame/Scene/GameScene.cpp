@@ -26,6 +26,7 @@ void GameScene::Initialize() {
 	floorModel_ = Model::CreateFromOBJ("floorwood");
 	wallModel_ = Model::CreateFromOBJ("wallwood");
 	ropeModel_ = Model::CreateFromOBJ("cube");
+	interactionPrompt_.Initialize();
 
 	// --------------------------------------------------------
 	// カメラ
@@ -169,6 +170,7 @@ bool GameScene::Update() {
 
 	// ドアの開閉アニメーションは毎フレーム更新する
 	door_->Update();
+	interactionPrompt_.Update();
 
 	// クリア後はその場で停止し、Rでやり直せるようにする
 	if (isClear_) {
@@ -290,6 +292,43 @@ void GameScene::Draw() {
 			*camera_,
 			&ropeColor_);
 	}
+
+	DrawInteractionPrompt();
+}
+
+void GameScene::DrawInteractionPrompt() {
+	if (player_ == nullptr || camera_ == nullptr || isClear_) {
+		return;
+	}
+
+	int targetBlockIndex = -1;
+	if (connectionState_ == ConnectionState::kIdle) {
+		targetBlockIndex = FindNearestConnectableBlock();
+	} else {
+		targetBlockIndex = activeBlockIndex_;
+	}
+
+	if (targetBlockIndex < 0 || targetBlockIndex >= kBlockCount ||
+		movableBlocks_[targetBlockIndex] == nullptr) {
+		return;
+	}
+
+	const MovableBlockGimmick* block = movableBlocks_[targetBlockIndex];
+	const float distance = Collision::Distance(
+		player_->GetPosition(),
+		block->GetPosition());
+	const float displayDistance =
+		connectionState_ == ConnectionState::kIdle
+			? kConnectDistance
+			: kDisconnectDistance;
+
+	if (distance > displayDistance) {
+		return;
+	}
+
+	Vector3 promptPosition = block->GetPosition();
+	promptPosition.y += block->GetHalfSize().y + 0.82f;
+	interactionPrompt_.DrawE(promptPosition, *camera_);
 }
 
 void GameScene::Finalize() {
@@ -306,6 +345,7 @@ void GameScene::Finalize() {
 
 	delete door_;
 	door_ = nullptr;
+	interactionPrompt_.Finalize();
 
 	delete camera_;
 	camera_ = nullptr;
@@ -1055,4 +1095,5 @@ void GameScene::ResetGame() {
 
 	isClear_ = false;
 	goalColor_.SetColor({0.20f, 0.85f, 0.90f, 1.0f});
+	interactionPrompt_.ResetAnimation();
 }

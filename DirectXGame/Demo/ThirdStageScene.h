@@ -3,6 +3,7 @@
 #include <KamataEngine.h>
 
 #include "../Common/Collision.h"
+#include "../Common/InteractionPrompt.h"
 #include "../Gimmick/AnchorSwingGimmick.h"
 #include "../Gimmick/MovableBlockGimmick.h"
 #include "../Gimmick/PowerGimmick.h"
@@ -44,6 +45,7 @@ private:
 	void UpdateRope();
 	void UpdateBlockRope();
 	void UpdateAnchorColor();
+	void DrawInteractionPrompt();
 
 	// Fキー：電源 <-> ドアの装置接続
 	void UpdateDeviceConnectionInput();
@@ -161,6 +163,7 @@ private:
 	bool deviceConnected_ = false;
 	bool doorActivationApplied_ = false;
 	DeviceType selectedDeviceType_ = DeviceType::kNone;
+	InteractionPrompt interactionPrompt_;
 
 	bool isClear_ = false;
 

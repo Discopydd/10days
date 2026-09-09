@@ -3,6 +3,7 @@
 #include <KamataEngine.h>
 
 #include "../Common/Collision.h"
+#include "../Common/InteractionPrompt.h"
 #include "../Gimmick/MovableBlockGimmick.h"
 #include "../Gimmick/SwitchDoorGimmick.h"
 #include "../Player/Player.h"
@@ -104,6 +105,7 @@ private:
 	// --------------------------------------------------------
 	void UpdateSwitch();
 	void UpdateGoal();
+	void DrawInteractionPrompt();
 	void ResetGame();
 
 private:
@@ -172,6 +174,7 @@ private:
 	KamataEngine::ObjectColor ropeColor_;
 	ConnectionState connectionState_ = ConnectionState::kIdle;
 	float ropeShootProgress_ = 0.0f;
+	InteractionPrompt interactionPrompt_;
 
 	// --------------------------------------------------------
 	// 定数

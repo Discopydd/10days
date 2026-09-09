@@ -22,6 +22,7 @@ void SwingDemoScene::Initialize() {
 	blockModel_ = Model::CreateFromOBJ("cubu");
 	switchModel_ = Model::CreateFromOBJ("cube");
 	doorModel_ = Model::CreateFromOBJ("cube");
+	interactionPrompt_.Initialize();
 
 	camera_->Initialize();
 	camera_->translation_ = {0.6f, 22.0f, -27.5f};
@@ -175,6 +176,7 @@ bool SwingDemoScene::Update() {
 
 	// ドアはスイッチ作動後に毎フレーム上昇する。
 	door_->Update();
+	interactionPrompt_.Update();
 
 	if (isClear_) {
 		return true;
@@ -240,6 +242,53 @@ void SwingDemoScene::Draw() {
 			*camera_,
 			&blockRopeColor_);
 	}
+
+	DrawInteractionPrompt();
+}
+
+void SwingDemoScene::DrawInteractionPrompt() {
+	if (player_ == nullptr || anchorSwing_ == nullptr ||
+		movableBlock_ == nullptr || camera_ == nullptr || isClear_) {
+		return;
+	}
+
+	const Vector3& playerPosition = player_->GetPosition();
+
+	// 接続中は、もう一度Eで解除できる対象を表示する。
+	if (blockPulling_ || movableBlock_->IsConnected()) {
+		Vector3 promptPosition = movableBlock_->GetPosition();
+		promptPosition.y += movableBlock_->GetHalfSize().y + 0.82f;
+		interactionPrompt_.DrawE(promptPosition, *camera_);
+		return;
+	}
+
+	if (anchorSwing_->IsConnected()) {
+		interactionPrompt_.DrawE(
+			{kAnchorPosition_.x, kAnchorPosition_.y + 0.90f, kAnchorPosition_.z},
+			*camera_);
+		return;
+	}
+
+	// 箱とアンカーが同時に範囲内なら、実際の入力処理と同じく箱を優先する。
+	const float blockDistance = Collision::Distance(
+		playerPosition,
+		movableBlock_->GetPosition());
+	if (!movableBlock_->IsLocked() && IsPlayerGrounded() &&
+		blockDistance <= kBlockConnectDistance) {
+		Vector3 promptPosition = movableBlock_->GetPosition();
+		promptPosition.y += movableBlock_->GetHalfSize().y + 0.82f;
+		interactionPrompt_.DrawE(promptPosition, *camera_);
+		return;
+	}
+
+	const float anchorDistance = Collision::Distance(
+		playerPosition,
+		kAnchorPosition_);
+	if (anchorDistance <= anchorSwing_->GetSettings().connectDistance) {
+		interactionPrompt_.DrawE(
+			{kAnchorPosition_.x, kAnchorPosition_.y + 0.90f, kAnchorPosition_.z},
+			*camera_);
+	}
 }
 
 void SwingDemoScene::Finalize() {
@@ -257,6 +306,7 @@ void SwingDemoScene::Finalize() {
 
 	delete door_;
 	door_ = nullptr;
+	interactionPrompt_.Finalize();
 
 	delete camera_;
 	camera_ = nullptr;
@@ -1428,6 +1478,7 @@ void SwingDemoScene::ResetDemo() {
 
 	isClear_ = false;
 	goalColor_.SetColor({0.20f, 0.85f, 0.90f, 1.0f});
+	interactionPrompt_.ResetAnimation();
 
 	UpdateAnchorColor();
 }

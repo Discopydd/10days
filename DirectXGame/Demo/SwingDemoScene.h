@@ -3,6 +3,7 @@
 #include <KamataEngine.h>
 
 #include "../Common/Collision.h"
+#include "../Common/InteractionPrompt.h"
 #include "../Gimmick/AnchorSwingGimmick.h"
 #include "../Gimmick/MovableBlockGimmick.h"
 #include "../Gimmick/SwitchDoorGimmick.h"
@@ -39,6 +40,7 @@ private:
 	void UpdateRope();
 	void UpdateBlockRope();
 	void UpdateAnchorColor();
+	void DrawInteractionPrompt();
 
 	// 右側足場のブロック・スイッチ・ドア
 	void UpdateSwitch();
@@ -133,6 +135,7 @@ private:
 	KamataEngine::Vector3 safeRespawnPosition_{};
 	bool blockPulling_ = false;
 	bool isClear_ = false;
+	InteractionPrompt interactionPrompt_;
 
 	static constexpr float kDeltaTime = 1.0f / 60.0f;
 	static constexpr float kGravity = 16.0f;

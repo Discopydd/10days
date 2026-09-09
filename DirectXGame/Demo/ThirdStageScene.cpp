@@ -24,6 +24,7 @@ void ThirdStageScene::Initialize() {
 	switchModel_ = Model::CreateFromOBJ("cube");
 	doorModel_ = Model::CreateFromOBJ("cube");
 	powerModel_ = Model::CreateFromOBJ("cube");
+	interactionPrompt_.Initialize();
 
 	camera_->Initialize();
 	camera_->translation_ = {0.8f, 22.0f, -27.5f};
@@ -194,6 +195,7 @@ bool ThirdStageScene::Update() {
 
 	// 双条件成立後、ドアは毎フレーム上昇する。
 	door_->Update();
+	interactionPrompt_.Update();
 
 	if (isClear_) {
 		return true;
@@ -270,6 +272,96 @@ void ThirdStageScene::Draw() {
 			*camera_,
 			&deviceRopeColor_);
 	}
+
+	DrawInteractionPrompt();
+}
+
+void ThirdStageScene::DrawInteractionPrompt() {
+	if (player_ == nullptr || anchorSwing_ == nullptr ||
+		movableBlock_ == nullptr || power_ == nullptr ||
+		door_ == nullptr || camera_ == nullptr || isClear_) {
+		return;
+	}
+
+	const Vector3& playerPosition = player_->GetPosition();
+
+	// E：箱またはアンカーへの接続 / 解除。
+	if (blockPulling_ || movableBlock_->IsConnected()) {
+		Vector3 promptPosition = movableBlock_->GetPosition();
+		promptPosition.y += movableBlock_->GetHalfSize().y + 0.82f;
+		interactionPrompt_.DrawE(promptPosition, *camera_);
+	} else if (anchorSwing_->IsConnected()) {
+		interactionPrompt_.DrawE(
+			{kAnchorPosition_.x, kAnchorPosition_.y + 0.90f, kAnchorPosition_.z},
+			*camera_);
+	} else {
+		const float blockDistance = Collision::Distance(
+			playerPosition,
+			movableBlock_->GetPosition());
+		if (!movableBlock_->IsLocked() && IsPlayerGrounded() &&
+			blockDistance <= kBlockConnectDistance) {
+			Vector3 promptPosition = movableBlock_->GetPosition();
+			promptPosition.y += movableBlock_->GetHalfSize().y + 0.82f;
+			interactionPrompt_.DrawE(promptPosition, *camera_);
+		} else {
+			const float anchorDistance = Collision::Distance(
+				playerPosition,
+				kAnchorPosition_);
+			if (anchorDistance <= anchorSwing_->GetSettings().connectDistance) {
+				interactionPrompt_.DrawE(
+					{kAnchorPosition_.x, kAnchorPosition_.y + 0.90f, kAnchorPosition_.z},
+					*camera_);
+			}
+		}
+	}
+
+	// F：未接続時は選択可能な装置、選択中は次の装置、
+	// 接続後は解除可能な電源の頭上に表示する。
+	const float powerDistance = Collision::Distance(
+		playerPosition,
+		power_->GetPosition());
+	const Vector3 doorPosition = GetDoorCenter();
+	const float doorDistance = Collision::Distance(
+		playerPosition,
+		doorPosition);
+
+	auto drawPowerPrompt = [this]() {
+		Vector3 promptPosition = power_->GetPosition();
+		promptPosition.y += kPowerScale_.y + 0.82f;
+		interactionPrompt_.DrawF(promptPosition, *camera_);
+	};
+
+	auto drawDoorPrompt = [this, &doorPosition]() {
+		Vector3 promptPosition = doorPosition;
+		promptPosition.y += kDoorScale_.y + 0.82f;
+		interactionPrompt_.DrawF(promptPosition, *camera_);
+	};
+
+	if (deviceConnected_) {
+		if (powerDistance <= kDeviceConnectDistance) {
+			drawPowerPrompt();
+		}
+		return;
+	}
+
+	if (deviceSelecting_) {
+		if (selectedDeviceType_ == DeviceType::kPower &&
+			doorDistance <= kDeviceConnectDistance) {
+			drawDoorPrompt();
+		} else if (selectedDeviceType_ == DeviceType::kDoor &&
+			powerDistance <= kDeviceConnectDistance) {
+			drawPowerPrompt();
+		}
+		return;
+	}
+
+	const bool canSelectPower = powerDistance <= kDeviceConnectDistance;
+	const bool canSelectDoor = doorDistance <= kDeviceConnectDistance;
+	if (canSelectPower && (!canSelectDoor || powerDistance <= doorDistance)) {
+		drawPowerPrompt();
+	} else if (canSelectDoor) {
+		drawDoorPrompt();
+	}
 }
 
 void ThirdStageScene::Finalize() {
@@ -290,6 +382,7 @@ void ThirdStageScene::Finalize() {
 
 	delete power_;
 	power_ = nullptr;
+	interactionPrompt_.Finalize();
 
 	delete camera_;
 	camera_ = nullptr;
@@ -1662,6 +1755,7 @@ void ThirdStageScene::ResetDemo() {
 
 	isClear_ = false;
 	goalColor_.SetColor({0.20f, 0.85f, 0.90f, 1.0f});
+	interactionPrompt_.ResetAnimation();
 
 	UpdateAnchorColor();
 }
