@@ -20,9 +20,9 @@ void GameScene::Initialize() {
 	// モデル
 	// --------------------------------------------------------
 	blockModel_ = Model::CreateFromOBJ("cubu");
-	switchModel_ = Model::CreateFromOBJ("cube");
+	switchModel_ = Model::CreateFromOBJ("select_panel");
 	doorModel_ = Model::CreateFromOBJ("cube");
-	goalModel_ = Model::CreateFromOBJ("cube");
+	goalModel_ = Model::CreateFromOBJ("select_panel");
 	floorModel_ = Model::CreateFromOBJ("floorwood");
 	wallModel_ = Model::CreateFromOBJ("wallwood");
 	ropeModel_ = Model::CreateFromOBJ("cube");
@@ -53,7 +53,7 @@ void GameScene::Initialize() {
 	}
 
 	// --------------------------------------------------------
-	// 右上のスイッチ
+	// 右上の箱子摆放底座
 	// --------------------------------------------------------
 	InitializeTransform(
 		switchWorldTransform_,
@@ -61,7 +61,7 @@ void GameScene::Initialize() {
 		kSwitchScale_);
 
 	switchColor_.Initialize();
-	switchColor_.SetColor({0.20f, 0.90f, 0.25f, 1.0f});
+	switchColor_.SetColor({0.95f, 0.20f, 0.20f, 1.0f});
 
 	switchAABB_ = Collision::MakeAABB(
 		kSwitchPosition_,
@@ -77,7 +77,7 @@ void GameScene::Initialize() {
 		4.0f);
 
 	// --------------------------------------------------------
-	// GOAL
+	// GOAL底座
 	// --------------------------------------------------------
 	InitializeTransform(
 		goalWorldTransform_,
@@ -85,7 +85,7 @@ void GameScene::Initialize() {
 		kGoalScale_);
 
 	goalColor_.Initialize();
-	goalColor_.SetColor({0.20f, 0.85f, 0.90f, 1.0f});
+	goalColor_.SetColor({1.0f, 0.85f, 0.15f, 1.0f});
 
 	goalAABB_ = Collision::MakeAABB(
 		kGoalPosition_,
@@ -261,7 +261,7 @@ void GameScene::Draw() {
 			&wallColor_);
 	}
 
-	// GOAL
+	// GOAL底座
 	goalModel_->Draw(
 		goalWorldTransform_,
 		*camera_,
@@ -958,7 +958,6 @@ void GameScene::UpdateSwitch() {
 		movableBlocks_[i]->SnapAndLock(snapPosition);
 
 		switchActivated_ = true;
-		switchColor_.SetColor({1.0f, 0.85f, 0.15f, 1.0f});
 
 		// ----------------------------------------------------
 		// スイッチ作動 → 中央ドアOPEN
@@ -987,8 +986,6 @@ void GameScene::UpdateGoal() {
 		isClear_ = true;
 		CancelConnection();
 
-		// クリアしたことが見た目で分かるようにGOALを黄色へ変更する
-		goalColor_.SetColor({1.0f, 0.80f, 0.10f, 1.0f});
 	}
 }
 
@@ -1079,9 +1076,9 @@ void GameScene::ResetGame() {
 	activeBlockIndex_ = -1;
 
 	switchActivated_ = false;
-	switchColor_.SetColor({0.20f, 0.90f, 0.25f, 1.0f});
+	switchColor_.SetColor({0.95f, 0.20f, 0.20f, 1.0f});
 
 	isClear_ = false;
-	goalColor_.SetColor({0.20f, 0.85f, 0.90f, 1.0f});
+	goalColor_.SetColor({1.0f, 0.85f, 0.15f, 1.0f});
 	interactionPrompt_.ResetAnimation();
 }

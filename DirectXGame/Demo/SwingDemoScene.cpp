@@ -17,10 +17,10 @@ void SwingDemoScene::Initialize() {
 	anchorModel_ = Model::CreateFromOBJ("anchor");
 	floorModel_ = Model::CreateFromOBJ("floorwood");
 	wallModel_ = Model::CreateFromOBJ("wallwood");
-	goalModel_ = Model::CreateFromOBJ("cube");
+	goalModel_ = Model::CreateFromOBJ("select_panel");
 	ropeModel_ = Model::CreateFromOBJ("cube");
 	blockModel_ = Model::CreateFromOBJ("cubu");
-	switchModel_ = Model::CreateFromOBJ("cube");
+	switchModel_ = Model::CreateFromOBJ("select_panel");
 	doorModel_ = Model::CreateFromOBJ("cube");
 	interactionPrompt_.Initialize();
 
@@ -143,10 +143,10 @@ void SwingDemoScene::Initialize() {
 	wallColor_.SetColor({0.78f, 0.80f, 0.83f, 1.0f});
 
 	switchColor_.Initialize();
-	switchColor_.SetColor({0.20f, 0.90f, 0.25f, 1.0f});
+	switchColor_.SetColor({0.95f, 0.20f, 0.20f, 1.0f});
 
 	goalColor_.Initialize();
-	goalColor_.SetColor({0.20f, 0.85f, 0.90f, 1.0f});
+	goalColor_.SetColor({1.0f, 0.85f, 0.15f, 1.0f});
 
 	ropeColor_.Initialize();
 	ropeColor_.SetColor({1.0f, 0.90f, 0.20f, 1.0f});
@@ -943,7 +943,6 @@ void SwingDemoScene::UpdateSwitch() {
 	movableBlock_->SnapAndLock(snapPosition);
 
 	switchActivated_ = true;
-	switchColor_.SetColor({1.0f, 0.85f, 0.15f, 1.0f});
 	door_->Open();
 }
 
@@ -1061,7 +1060,6 @@ void SwingDemoScene::UpdateGoal() {
 		}
 		playerVelocity_ = {};
 
-		goalColor_.SetColor({1.0f, 0.80f, 0.10f, 1.0f});
 	}
 }
 
@@ -1465,10 +1463,10 @@ void SwingDemoScene::ResetDemo() {
 	player_->Reset(kPlayerStartPosition_);
 
 	switchActivated_ = false;
-	switchColor_.SetColor({0.20f, 0.90f, 0.25f, 1.0f});
+	switchColor_.SetColor({0.95f, 0.20f, 0.20f, 1.0f});
 
 	isClear_ = false;
-	goalColor_.SetColor({0.20f, 0.85f, 0.90f, 1.0f});
+	goalColor_.SetColor({1.0f, 0.85f, 0.15f, 1.0f});
 	interactionPrompt_.ResetAnimation();
 
 	UpdateAnchorColor();

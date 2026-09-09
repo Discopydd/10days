@@ -28,7 +28,8 @@ private:
 
 	KamataEngine::Model* panelModel_ = nullptr;
 	KamataEngine::Model* blockIconModel_ = nullptr;
-	KamataEngine::Model* sphereModel_ = nullptr;
+	KamataEngine::Model* anchorIconModel_ = nullptr;
+	KamataEngine::Model* playerIconModel_ = nullptr;
 	KamataEngine::Model* ropeModel_ = nullptr;
 	KamataEngine::Model* floorModel_ = nullptr;
 	KamataEngine::Model* powerIconModel_ = nullptr;

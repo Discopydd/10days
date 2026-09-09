@@ -38,7 +38,7 @@ void SceneManager::Initialize() {
 	if (clearSprite_ != nullptr) {
 		clearSprite_->SetSize({1280.0f, 720.0f});
 		// クリア画像の不透明度。背後に通過時のステージを残す。
-		constexpr float kClearOpacity = 0.65f;
+		constexpr float kClearOpacity = 1.0f;
 		clearSprite_->SetColor({1.0f, 1.0f, 1.0f, kClearOpacity});
 	}
 }

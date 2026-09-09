@@ -138,8 +138,7 @@ void MovableBlockGimmick::SnapAndLock(const Vector3& position) {
 	isConnected_ = false;
 	isLocked_ = true;
 
-	// 固定成功は緑色で表示する
-	objectColor_.SetColor({0.2f, 1.0f, 0.35f, 1.0f});
+	// 底座に置いて固定しても、Blockの現在の色は変更しない
 	worldTransform_.UpdateMatarix();
 }
 
