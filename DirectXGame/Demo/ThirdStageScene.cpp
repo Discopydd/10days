@@ -211,6 +211,7 @@ bool ThirdStageScene::Update() {
 	UpdateBlockRope();
 	UpdateDeviceRope();
 	UpdateAnchorColor();
+	UpdatePlayerConnectionColor();
 
 	return true;
 }
@@ -1142,6 +1143,25 @@ void ThirdStageScene::UpdateAnchorColor() {
 	anchorColor_.SetColor({1.0f, 1.0f, 1.0f, 1.0f});
 }
 
+void ThirdStageScene::UpdatePlayerConnectionColor() {
+	if (player_ == nullptr || anchorSwing_ == nullptr || movableBlock_ == nullptr) {
+		return;
+	}
+
+	if (blockPulling_ || movableBlock_->IsConnected()) {
+		player_->SetConnectionColor(Player::ConnectionColor::kRed);
+	} else if (anchorSwing_->IsConnected()) {
+		player_->SetConnectionColor(Player::ConnectionColor::kGreen);
+	} else if (deviceSelecting_ && selectedDeviceType_ == DeviceType::kPower) {
+		// Fで電源を選択している間だけ、Playerは電源へ接続中。
+		// deviceConnected_ は「電源とドアが接続済み」の状態なので、
+		// 接続完了後はPlayerの通常色へ戻す。
+		player_->SetConnectionColor(Player::ConnectionColor::kPurple);
+	} else {
+		player_->SetConnectionColor(Player::ConnectionColor::kNormal);
+	}
+}
+
 Vector3 ThirdStageScene::GetDoorCenter() const {
 	if (door_ == nullptr) {
 		return kDoorPosition_;
@@ -1719,6 +1739,7 @@ void ThirdStageScene::ResetPlayerAfterFall() {
 	player_->Reset(FindSafeRespawnPosition());
 
 	UpdateAnchorColor();
+	UpdatePlayerConnectionColor();
 }
 
 void ThirdStageScene::ResetDemo() {
@@ -1749,4 +1770,5 @@ void ThirdStageScene::ResetDemo() {
 	interactionPrompt_.ResetAnimation();
 
 	UpdateAnchorColor();
+	UpdatePlayerConnectionColor();
 }

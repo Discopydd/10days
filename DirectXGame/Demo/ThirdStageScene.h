@@ -45,6 +45,7 @@ private:
 	void UpdateRope();
 	void UpdateBlockRope();
 	void UpdateAnchorColor();
+	void UpdatePlayerConnectionColor();
 	void DrawInteractionPrompt();
 
 	// Fキー：電源 <-> ドアの装置接続

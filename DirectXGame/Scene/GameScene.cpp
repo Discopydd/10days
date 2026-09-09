@@ -226,6 +226,7 @@ bool GameScene::Update() {
 	}
 
 	UpdateRope();
+	UpdatePlayerConnectionColor();
 
 	return true;
 }
@@ -903,6 +904,18 @@ void GameScene::CancelConnection() {
 	activeBlockIndex_ = -1;
 }
 
+void GameScene::UpdatePlayerConnectionColor() {
+	if (player_ == nullptr) {
+		return;
+	}
+
+	if (connectionState_ != ConnectionState::kIdle) {
+		player_->SetConnectionColor(Player::ConnectionColor::kRed);
+	} else {
+		player_->SetConnectionColor(Player::ConnectionColor::kNormal);
+	}
+}
+
 void GameScene::UpdateSwitch() {
 	// 1回作動したら再判定しない
 	if (switchActivated_) {
@@ -1074,6 +1087,7 @@ void GameScene::ResetGame() {
 	connectionState_ = ConnectionState::kIdle;
 	ropeShootProgress_ = 0.0f;
 	activeBlockIndex_ = -1;
+	UpdatePlayerConnectionColor();
 
 	switchActivated_ = false;
 	switchColor_.SetColor({0.95f, 0.20f, 0.20f, 1.0f});

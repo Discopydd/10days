@@ -9,6 +9,14 @@
 // ============================================================
 class Player {
 public:
+	// 接続先に合わせて表示色を切り替える。
+	enum class ConnectionColor {
+		kNormal,
+		kRed,
+		kGreen,
+		kPurple,
+	};
+
 	// プレイヤーを初期化する
 	void Initialize(const KamataEngine::Vector3& position);
 
@@ -65,12 +73,16 @@ public:
 	// 移動速度を変更する
 	void SetMoveSpeed(float speed);
 
+	// 接続先の色をプレイヤーへ反映する。
+	void SetConnectionColor(ConnectionColor color);
+
 private:
 	KamataEngine::Input* input_ = nullptr;
 	KamataEngine::Model* model_ = nullptr;
 
 	KamataEngine::WorldTransform worldTransform_;
 	KamataEngine::ObjectColor objectColor_;
+	KamataEngine::Vector4 normalColor_ = {1.0f, 1.0f, 1.0f, 1.0f};
 
 	// プレイヤーの当たり判定サイズ
 	KamataEngine::Vector3 halfSize_ = {0.6f, 0.6f, 0.6f};

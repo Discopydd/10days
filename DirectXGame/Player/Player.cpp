@@ -20,7 +20,8 @@ void Player::Initialize(const Vector3& position) {
 
 	objectColor_.Initialize();
 	// テクスチャ本来の色をそのまま表示する
-	objectColor_.SetColor({1.0f, 1.0f, 1.0f, 1.0f});
+	normalColor_ = {1.0f, 1.0f, 1.0f, 1.0f};
+	objectColor_.SetColor(normalColor_);
 }
 
 void Player::Finalize() {
@@ -201,4 +202,26 @@ Collision::AABB Player::GetAABBAt(const Vector3& position) const {
 
 void Player::SetMoveSpeed(float speed) {
 	moveSpeed_ = speed;
+}
+
+void Player::SetConnectionColor(ConnectionColor color) {
+	switch (color) {
+	case ConnectionColor::kRed:
+		// プレイヤーの青緑色テクスチャと照明で暗くならないよう、純赤を強めに乗せる。
+		objectColor_.SetColor({2.0f, 0.0f, 0.0f, 1.0f});
+		break;
+
+	case ConnectionColor::kGreen:
+		objectColor_.SetColor({0.0f, 2.0f, 0.0f, 1.0f});
+		break;
+
+	case ConnectionColor::kPurple:
+		objectColor_.SetColor({2.0f, 0.0f, 2.0f, 1.0f});
+		break;
+
+	case ConnectionColor::kNormal:
+	default:
+		objectColor_.SetColor(normalColor_);
+		break;
+	}
 }

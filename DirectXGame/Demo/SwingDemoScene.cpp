@@ -189,6 +189,7 @@ bool SwingDemoScene::Update() {
 	UpdateRope();
 	UpdateBlockRope();
 	UpdateAnchorColor();
+	UpdatePlayerConnectionColor();
 
 	return true;
 }
@@ -1039,6 +1040,20 @@ void SwingDemoScene::UpdateAnchorColor() {
 	anchorColor_.SetColor({1.0f, 1.0f, 1.0f, 1.0f});
 }
 
+void SwingDemoScene::UpdatePlayerConnectionColor() {
+	if (player_ == nullptr || anchorSwing_ == nullptr || movableBlock_ == nullptr) {
+		return;
+	}
+
+	if (blockPulling_ || movableBlock_->IsConnected()) {
+		player_->SetConnectionColor(Player::ConnectionColor::kRed);
+	} else if (anchorSwing_->IsConnected()) {
+		player_->SetConnectionColor(Player::ConnectionColor::kGreen);
+	} else {
+		player_->SetConnectionColor(Player::ConnectionColor::kNormal);
+	}
+}
+
 void SwingDemoScene::UpdateGoal() {
 	if (player_ == nullptr || anchorSwing_ == nullptr || door_ == nullptr ||
 		isClear_) {
@@ -1445,6 +1460,7 @@ void SwingDemoScene::ResetPlayerAfterFall() {
 	player_->Reset(FindSafeRespawnPosition());
 
 	UpdateAnchorColor();
+	UpdatePlayerConnectionColor();
 }
 
 void SwingDemoScene::ResetDemo() {
@@ -1470,4 +1486,5 @@ void SwingDemoScene::ResetDemo() {
 	interactionPrompt_.ResetAnimation();
 
 	UpdateAnchorColor();
+	UpdatePlayerConnectionColor();
 }

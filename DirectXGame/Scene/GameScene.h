@@ -95,6 +95,7 @@ private:
 
 	void CancelConnection();
 	void UpdateRope();
+	void UpdatePlayerConnectionColor();
 
 	void SetRopeTransform(
 	    const KamataEngine::Vector3& start,

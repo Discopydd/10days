@@ -40,6 +40,7 @@ private:
 	void UpdateRope();
 	void UpdateBlockRope();
 	void UpdateAnchorColor();
+	void UpdatePlayerConnectionColor();
 	void DrawInteractionPrompt();
 
 	// 右側足場のブロック・スイッチ・ドア
