@@ -1,6 +1,7 @@
 #include "SceneManager.h"
 
 #include <KamataEngine.h>
+#include <cmath>
 
 #include "GameScene.h"
 #include "TitleScene.h"
@@ -20,10 +21,45 @@ void SceneManager::Initialize() {
 		howToSprite_->SetSize({1280.0f, 720.0f});
 	}
 
+	spacePromptSprite_ = Sprite::Create(
+		TextureManager::Load("ui/space_prompt.png"), {460.0f, 520.0f});
+	if (spacePromptSprite_ != nullptr) {
+		spacePromptSprite_->SetSize({360.0f, 120.0f});
+	}
+
 	ChangeScene(SceneType::kTitle);
+
+	backgroundSprite_ = Sprite::Create(
+		TextureManager::Load("ui/background.png"), {0.0f, 0.0f});
+	if (backgroundSprite_ != nullptr) {
+		backgroundSprite_->SetSize({1280.0f, 720.0f});
+	}
+	clearSprite_ = Sprite::Create(
+		TextureManager::Load("ui/clear.png"), {0.0f, 0.0f});
+	if (clearSprite_ != nullptr) {
+		clearSprite_->SetSize({1280.0f, 720.0f});
+		// クリア画像の不透明度。背後に通過時のステージを残す。
+		constexpr float kClearOpacity = 1.0f;
+		clearSprite_->SetColor({1.0f, 1.0f, 1.0f, kClearOpacity});
+	}
 }
 
 bool SceneManager::Update() {
+	// ステージ停止中もUIだけ更新する。
+	UpdateSpacePrompt();
+	if (isClearVisible_) {
+		// クリア時に押していたSPACEでは進めず、押し直しを待つ。
+		if (input_ != nullptr) {
+			if (!input_->PushKey(DIK_SPACE)) {
+				clearSpaceReady_ = true;
+			}
+			if (clearSpaceReady_ && input_->TriggerKey(DIK_SPACE)) {
+				ChangeScene(SceneType::kLevelSelect);
+			}
+		}
+		return true;
+	}
+
 	if (IsGameplayScene() && input_ != nullptr &&
 		input_->TriggerKey(DIK_TAB)) {
 		isHowToVisible_ = !isHowToVisible_;
@@ -56,7 +92,7 @@ bool SceneManager::Update() {
 		}
 
 		if (gameScene_->IsClear()) {
-			ChangeScene(SceneType::kLevelSelect);
+			ShowClearScreen();
 		}
 		break;
 	}
@@ -81,7 +117,7 @@ bool SceneManager::Update() {
 		}
 
 		if (swingScene_->IsClear()) {
-			ChangeScene(SceneType::kLevelSelect);
+			ShowClearScreen();
 		}
 		break;
 	}
@@ -92,7 +128,7 @@ bool SceneManager::Update() {
 		}
 
 		if (thirdScene_->IsClear()) {
-			ChangeScene(SceneType::kLevelSelect);
+			ShowClearScreen();
 		}
 		break;
 	}
@@ -140,6 +176,13 @@ void SceneManager::Draw() {
 	}
 }
 
+void SceneManager::DrawBackground() {
+	if ((IsGameplayScene() || currentScene_ == SceneType::kLevelSelect) &&
+		backgroundSprite_ != nullptr) {
+		backgroundSprite_->Draw();
+	}
+}
+
 void SceneManager::DrawSprite() {
 	if (currentScene_ == SceneType::kTitle && titleScene_ != nullptr) {
 		titleScene_->Draw();
@@ -148,6 +191,16 @@ void SceneManager::DrawSprite() {
 	if (isHowToVisible_ && howToSprite_ != nullptr) {
 		howToSprite_->Draw();
 	}
+	if (isClearVisible_ && clearSprite_ != nullptr) {
+		clearSprite_->Draw();
+	}
+
+	const bool showTitlePrompt = currentScene_ == SceneType::kTitle &&
+		titleScene_ != nullptr && titleScene_->IsTitlePage();
+	if ((showTitlePrompt || isClearVisible_) && spacePromptSprite_ != nullptr) {
+		// 半透明のCLEAR画像より後に、不透明なキーを描画する。
+		spacePromptSprite_->Draw();
+	}
 }
 
 void SceneManager::Finalize() {
@@ -155,11 +208,23 @@ void SceneManager::Finalize() {
 
 	delete howToSprite_;
 	howToSprite_ = nullptr;
+	delete backgroundSprite_;
+	backgroundSprite_ = nullptr;
+	delete clearSprite_;
+	clearSprite_ = nullptr;
+	delete spacePromptSprite_;
+	spacePromptSprite_ = nullptr;
+	isHowToVisible_ = false;
+	isClearVisible_ = false;
+	clearSpaceReady_ = false;
 	input_ = nullptr;
 }
 
 void SceneManager::ChangeScene(SceneType nextScene) {
+	ResetSpacePrompt();
 	isHowToVisible_ = false;
+	isClearVisible_ = false;
+	clearSpaceReady_ = false;
 	currentScene_ = nextScene;
 
 	switch (currentScene_) {
@@ -251,4 +316,33 @@ bool SceneManager::IsGameplayScene() const {
 	return currentScene_ == SceneType::kGame ||
 		currentScene_ == SceneType::kSwing ||
 		currentScene_ == SceneType::kThird;
+}
+
+void SceneManager::ShowClearScreen() {
+	ResetSpacePrompt();
+	isClearVisible_ = true;
+	isHowToVisible_ = false;
+	clearSpaceReady_ = input_ != nullptr && !input_->PushKey(DIK_SPACE);
+}
+
+void SceneManager::ResetSpacePrompt() {
+	spacePromptStart_ = std::chrono::steady_clock::now();
+	if (spacePromptSprite_ != nullptr) {
+		spacePromptSprite_->SetPosition({460.0f, 520.0f});
+	}
+}
+
+void SceneManager::UpdateSpacePrompt() {
+	if (spacePromptSprite_ == nullptr) {
+		return;
+	}
+	// フレームレートに依存せず、2秒周期で上下8px揺らす。
+	constexpr double kPeriodSeconds = 2.0;
+	constexpr double kTwoPi = 6.283185307179586;
+	constexpr float kAmplitude = 8.0f;
+	const double elapsed = std::chrono::duration<double>(
+		std::chrono::steady_clock::now() - spacePromptStart_).count();
+	const double phase = std::fmod(elapsed, kPeriodSeconds) / kPeriodSeconds;
+	const float offset = kAmplitude * static_cast<float>(std::sin(phase * kTwoPi));
+	spacePromptSprite_->SetPosition({460.0f, 520.0f + offset});
 }

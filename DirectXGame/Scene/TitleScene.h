@@ -19,6 +19,7 @@ public:
 
 	SceneType GetRequestedScene() const;
 	void Reset();
+	bool IsTitlePage() const { return page_ == Page::kTitle; }
 
 private:
 	enum class Page {

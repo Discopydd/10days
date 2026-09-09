@@ -35,6 +35,10 @@ int WINAPI WinMain(
 
 		dxCommon->PreDraw();
 
+		Sprite::PreDraw();
+		sceneManager->DrawBackground();
+		Sprite::PostDraw();
+
 		Model::PreDraw(Model::CullingMode::kNone);
 		sceneManager->Draw();
 		Model::PostDraw();
