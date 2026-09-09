@@ -1,9 +1,12 @@
 #pragma once
 
+#include <cstdint>
+
 #include "SceneType.h"
 
 namespace KamataEngine {
 class Input;
+class Audio;
 class Sprite;
 }
 
@@ -32,6 +35,8 @@ private:
 private:
 	SceneType currentScene_ = SceneType::kNone;
 	KamataEngine::Input* input_ = nullptr;
+	KamataEngine::Audio* audio_ = nullptr;
+	uint32_t clearSoundHandle_ = 0u;
 	KamataEngine::Sprite* howToSprite_ = nullptr;
 	bool isHowToVisible_ = false;
 	KamataEngine::Sprite* backgroundSprite_ = nullptr;

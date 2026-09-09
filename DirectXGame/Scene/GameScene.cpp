@@ -7,6 +7,11 @@ using namespace KamataEngine;
 
 void GameScene::Initialize() {
 	input_ = Input::GetInstance();
+	audio_ = Audio::GetInstance();
+	if (audio_ != nullptr) {
+		connectBoxSoundHandle_ = audio_->LoadWave("connect_box.wav");
+		doorOpenSoundHandle_ = audio_->LoadWave("open_door.wav");
+	}
 
 	camera_ = new Camera();
 	player_ = new Player();
@@ -704,6 +709,9 @@ void GameScene::UpdateConnectionInput() {
 	ropeShootProgress_ = 0.0f;
 	movableBlocks_[activeBlockIndex_]->SetConnected(false);
 	movableBlocks_[activeBlockIndex_]->SetPullingVisual(false);
+	if (audio_ != nullptr) {
+		audio_->PlayWave(connectBoxSoundHandle_);
+	}
 }
 
 void GameScene::UpdateRopeShot() {
@@ -972,10 +980,13 @@ void GameScene::UpdateSwitch() {
 
 		switchActivated_ = true;
 
-		// ----------------------------------------------------
-		// スイッチ作動 → 中央ドアOPEN
-		// ----------------------------------------------------
-		door_->Open();
+			// ----------------------------------------------------
+			// スイッチ作動 → 中央ドアOPEN
+			// ----------------------------------------------------
+			door_->Open();
+			if (audio_ != nullptr) {
+				audio_->PlayWave(doorOpenSoundHandle_);
+			}
 
 		// 操作中のBlockを置いた場合は接続解除
 		if (activeBlockIndex_ == i) {

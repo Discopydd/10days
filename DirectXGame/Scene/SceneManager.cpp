@@ -12,6 +12,10 @@ using namespace KamataEngine;
 
 void SceneManager::Initialize() {
 	input_ = Input::GetInstance();
+	audio_ = Audio::GetInstance();
+	if (audio_ != nullptr) {
+		clearSoundHandle_ = audio_->LoadWave("clear.wav");
+	}
 
 	const uint32_t howToTextureHandle =
 		TextureManager::Load("instruction/instruction.png");
@@ -316,10 +320,17 @@ bool SceneManager::IsGameplayScene() const {
 }
 
 void SceneManager::ShowClearScreen() {
+	if (isClearVisible_) {
+		return;
+	}
+
 	ResetSpacePrompt();
 	isClearVisible_ = true;
 	isHowToVisible_ = false;
 	clearSpaceReady_ = input_ != nullptr && !input_->PushKey(DIK_SPACE);
+	if (audio_ != nullptr) {
+		audio_->PlayWave(clearSoundHandle_);
+	}
 }
 
 void SceneManager::ResetSpacePrompt() {

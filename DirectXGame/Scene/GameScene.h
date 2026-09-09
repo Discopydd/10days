@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include <KamataEngine.h>
 
 #include "../Common/Collision.h"
@@ -111,6 +113,9 @@ private:
 
 private:
 	KamataEngine::Input* input_ = nullptr;
+	KamataEngine::Audio* audio_ = nullptr;
+	uint32_t connectBoxSoundHandle_ = 0u;
+	uint32_t doorOpenSoundHandle_ = 0u;
 
 	Player* player_ = nullptr;
 	KamataEngine::Camera* camera_ = nullptr;

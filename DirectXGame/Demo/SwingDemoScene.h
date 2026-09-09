@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include <KamataEngine.h>
 
 #include "../Common/Collision.h"
@@ -41,6 +43,7 @@ private:
 	void UpdateBlockRope();
 	void UpdateAnchorColor();
 	void UpdatePlayerConnectionColor();
+	void UpdateSwingSound();
 	void DrawInteractionPrompt();
 
 	// 右側足場のブロック・スイッチ・ドア
@@ -87,6 +90,11 @@ private:
 
 private:
 	KamataEngine::Input* input_ = nullptr;
+	KamataEngine::Audio* audio_ = nullptr;
+	uint32_t connectBoxSoundHandle_ = 0u;
+	uint32_t doorOpenSoundHandle_ = 0u;
+	uint32_t swingSoundHandle_ = 0u;
+	float swingSoundCooldown_ = 0.0f;
 
 	Player* player_ = nullptr;
 	AnchorSwingGimmick* anchorSwing_ = nullptr;

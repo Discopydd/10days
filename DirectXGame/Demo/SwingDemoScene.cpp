@@ -7,6 +7,13 @@ using namespace KamataEngine;
 
 void SwingDemoScene::Initialize() {
 	input_ = Input::GetInstance();
+	audio_ = Audio::GetInstance();
+	if (audio_ != nullptr) {
+		connectBoxSoundHandle_ = audio_->LoadWave("connect_box.wav");
+		doorOpenSoundHandle_ = audio_->LoadWave("open_door.wav");
+		swingSoundHandle_ = audio_->LoadWave("swing.wav");
+	}
+	swingSoundCooldown_ = 0.0f;
 
 	player_ = new Player();
 	anchorSwing_ = new AnchorSwingGimmick();
@@ -190,6 +197,7 @@ bool SwingDemoScene::Update() {
 	UpdateBlockRope();
 	UpdateAnchorColor();
 	UpdatePlayerConnectionColor();
+	UpdateSwingSound();
 
 	return true;
 }
@@ -382,6 +390,9 @@ void SwingDemoScene::UpdateConnection() {
 		if (blockDistance <= kBlockConnectDistance) {
 			blockPulling_ = true;
 			movableBlock_->SetPullingVisual(true);
+			if (audio_ != nullptr) {
+				audio_->PlayWave(connectBoxSoundHandle_);
+			}
 			return;
 		}
 	}
@@ -945,6 +956,9 @@ void SwingDemoScene::UpdateSwitch() {
 
 	switchActivated_ = true;
 	door_->Open();
+	if (audio_ != nullptr) {
+		audio_->PlayWave(doorOpenSoundHandle_);
+	}
 }
 
 void SwingDemoScene::UpdateRope() {
@@ -1052,6 +1066,27 @@ void SwingDemoScene::UpdatePlayerConnectionColor() {
 	} else {
 		player_->SetConnectionColor(Player::ConnectionColor::kNormal);
 	}
+}
+
+void SwingDemoScene::UpdateSwingSound() {
+	if (swingSoundCooldown_ > 0.0f) {
+		swingSoundCooldown_ =
+			(std::max)(0.0f, swingSoundCooldown_ - kDeltaTime);
+	}
+
+	if (audio_ == nullptr || player_ == nullptr || anchorSwing_ == nullptr ||
+		!anchorSwing_->IsConnected() || swingSoundCooldown_ > 0.0f) {
+		return;
+	}
+
+	const Vector3 move = player_->GetInputMove();
+	const float moveLengthSq = move.x * move.x + move.z * move.z;
+	if (moveLengthSq <= 0.000001f) {
+		return;
+	}
+
+	audio_->PlayWave(swingSoundHandle_);
+	swingSoundCooldown_ = 0.95f;
 }
 
 void SwingDemoScene::UpdateGoal() {
@@ -1472,6 +1507,7 @@ void SwingDemoScene::ResetDemo() {
 	anchorSwing_->Disconnect();
 	movableBlock_->Reset(kBlockStartPosition_);
 	blockPulling_ = false;
+	swingSoundCooldown_ = 0.0f;
 	door_->Reset();
 
 	playerVelocity_ = {};
