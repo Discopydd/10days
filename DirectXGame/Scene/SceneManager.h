@@ -6,6 +6,7 @@ class TitleScene;
 class GameScene;
 class LevelSelectScene;
 class SwingDemoScene;
+class ThirdStageScene;
 
 class SceneManager {
 public:
@@ -25,4 +26,5 @@ private:
 	GameScene* gameScene_ = nullptr;
 	LevelSelectScene* levelSelectScene_ = nullptr;
 	SwingDemoScene* swingScene_ = nullptr;
+	ThirdStageScene* thirdScene_ = nullptr;
 };

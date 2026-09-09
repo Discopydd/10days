@@ -39,6 +39,9 @@
     <ClCompile Include="Gimmick\AnchorSwingGimmick.cpp">
       <Filter>Gimmick</Filter>
     </ClCompile>
+    <ClCompile Include="Gimmick\PowerGimmick.cpp">
+      <Filter>Gimmick</Filter>
+    </ClCompile>
     <ClCompile Include="Scene\GameScene.cpp">
       <Filter>Scene</Filter>
     </ClCompile>
@@ -52,6 +55,9 @@
       <Filter>Scene</Filter>
     </ClCompile>
     <ClCompile Include="Demo\SwingDemoScene.cpp">
+      <Filter>Demo</Filter>
+    </ClCompile>
+    <ClCompile Include="Demo\ThirdStageScene.cpp">
       <Filter>Demo</Filter>
     </ClCompile>
     <ClCompile Include="Player\Player.cpp">
@@ -77,6 +83,9 @@
     <ClInclude Include="Gimmick\AnchorSwingGimmick.h">
       <Filter>Gimmick</Filter>
     </ClInclude>
+    <ClInclude Include="Gimmick\PowerGimmick.h">
+      <Filter>Gimmick</Filter>
+    </ClInclude>
     <ClInclude Include="Scene\GameScene.h">
       <Filter>Scene</Filter>
     </ClInclude>
@@ -93,6 +102,9 @@
       <Filter>Scene</Filter>
     </ClInclude>
     <ClInclude Include="Demo\SwingDemoScene.h">
+      <Filter>Demo</Filter>
+    </ClInclude>
+    <ClInclude Include="Demo\ThirdStageScene.h">
       <Filter>Demo</Filter>
     </ClInclude>
     <ClInclude Include="Player\Player.h">

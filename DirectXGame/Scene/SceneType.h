@@ -6,4 +6,5 @@ enum class SceneType {
 	kGame,
 	kLevelSelect,
 	kSwing,
+	kThird,
 };

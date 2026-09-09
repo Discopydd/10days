@@ -4,6 +4,7 @@
 #include "TitleScene.h"
 #include "LevelSelectScene.h"
 #include "../Demo/SwingDemoScene.h"
+#include "../Demo/ThirdStageScene.h"
 
 void SceneManager::Initialize() {
 	ChangeScene(SceneType::kTitle);
@@ -61,6 +62,17 @@ bool SceneManager::Update() {
 		break;
 	}
 
+	case SceneType::kThird: {
+		if (thirdScene_ == nullptr || !thirdScene_->Update()) {
+			return false;
+		}
+
+		if (thirdScene_->IsClear()) {
+			ChangeScene(SceneType::kLevelSelect);
+		}
+		break;
+	}
+
 	case SceneType::kNone:
 	default:
 		return false;
@@ -92,6 +104,12 @@ void SceneManager::Draw() {
 	case SceneType::kSwing:
 		if (swingScene_ != nullptr) {
 			swingScene_->Draw();
+		}
+		break;
+
+	case SceneType::kThird:
+		if (thirdScene_ != nullptr) {
+			thirdScene_->Draw();
 		}
 		break;
 
@@ -144,6 +162,15 @@ void SceneManager::ChangeScene(SceneType nextScene) {
 		}
 		break;
 
+	case SceneType::kThird:
+		if (thirdScene_ == nullptr) {
+			thirdScene_ = new ThirdStageScene();
+			thirdScene_->Initialize();
+		} else {
+			thirdScene_->ResetStage();
+		}
+		break;
+
 	case SceneType::kNone:
 	default:
 		break;
@@ -173,6 +200,12 @@ void SceneManager::DeleteCurrentScene() {
 		swingScene_->Finalize();
 		delete swingScene_;
 		swingScene_ = nullptr;
+	}
+
+	if (thirdScene_ != nullptr) {
+		thirdScene_->Finalize();
+		delete thirdScene_;
+		thirdScene_ = nullptr;
 	}
 
 	currentScene_ = SceneType::kNone;

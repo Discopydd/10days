@@ -31,23 +31,28 @@ private:
 	KamataEngine::Model* sphereModel_ = nullptr;
 	KamataEngine::Model* ropeModel_ = nullptr;
 	KamataEngine::Model* floorModel_ = nullptr;
+	KamataEngine::Model* powerIconModel_ = nullptr;
 
 	KamataEngine::Camera camera_;
 
 	KamataEngine::WorldTransform leftPanelTransform_;
 	KamataEngine::WorldTransform rightPanelTransform_;
+	KamataEngine::WorldTransform thirdPanelTransform_;
 	KamataEngine::WorldTransform blockIconTransform_;
 	KamataEngine::WorldTransform anchorIconTransform_;
 	KamataEngine::WorldTransform playerIconTransform_;
 	KamataEngine::WorldTransform ropeTransform_;
+	KamataEngine::WorldTransform powerIconTransform_;
 	KamataEngine::WorldTransform floorTransform_;
 
 	KamataEngine::ObjectColor leftPanelColor_;
 	KamataEngine::ObjectColor rightPanelColor_;
+	KamataEngine::ObjectColor thirdPanelColor_;
 	KamataEngine::ObjectColor blockIconColor_;
 	KamataEngine::ObjectColor anchorIconColor_;
 	KamataEngine::ObjectColor playerIconColor_;
 	KamataEngine::ObjectColor ropeColor_;
+	KamataEngine::ObjectColor powerIconColor_;
 	KamataEngine::ObjectColor floorColor_;
 
 	int selectedIndex_ = 0;

@@ -182,11 +182,13 @@ xcopy "$(ProjectDir)..\External\KamataEngine\shaders" "$(ProjectDir)Resources\En
     <ClCompile Include="Gimmick\MovableBlockGimmick.cpp" />
     <ClCompile Include="Gimmick\SwitchDoorGimmick.cpp" />
     <ClCompile Include="Gimmick\AnchorSwingGimmick.cpp" />
+    <ClCompile Include="Gimmick\PowerGimmick.cpp" />
     <ClCompile Include="Scene\GameScene.cpp" />
     <ClCompile Include="Scene\TitleScene.cpp" />
     <ClCompile Include="Scene\LevelSelectScene.cpp" />
     <ClCompile Include="Scene\SceneManager.cpp" />
     <ClCompile Include="Demo\SwingDemoScene.cpp" />
+    <ClCompile Include="Demo\ThirdStageScene.cpp" />
     <ClCompile Include="Player\Player.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="WorldTransformEx.cpp" />
@@ -197,12 +199,14 @@ xcopy "$(ProjectDir)..\External\KamataEngine\shaders" "$(ProjectDir)Resources\En
     <ClInclude Include="Gimmick\MovableBlockGimmick.h" />
     <ClInclude Include="Gimmick\SwitchDoorGimmick.h" />
     <ClInclude Include="Gimmick\AnchorSwingGimmick.h" />
+    <ClInclude Include="Gimmick\PowerGimmick.h" />
     <ClInclude Include="Scene\GameScene.h" />
     <ClInclude Include="Scene\TitleScene.h" />
     <ClInclude Include="Scene\LevelSelectScene.h" />
     <ClInclude Include="Scene\SceneManager.h" />
     <ClInclude Include="Scene\SceneType.h" />
     <ClInclude Include="Demo\SwingDemoScene.h" />
+    <ClInclude Include="Demo\ThirdStageScene.h" />
     <ClInclude Include="Player\Player.h" />
     <ClInclude Include="math.h" />
   </ItemGroup>
