@@ -2,11 +2,31 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 
 using namespace KamataEngine;
 
+namespace {
+Audio* gThirdStageAudio = nullptr;
+uint32_t gThirdStageConnectBoxSoundHandle = 0u;
+uint32_t gThirdStageSwingSoundHandle = 0u;
+uint32_t gThirdStageDoorOpenSoundHandle = 0u;
+float gThirdStageSwingSoundCooldown = 0.0f;
+constexpr float kThirdStageSwingSoundInterval = 0.95f;
+} // namespace
+
 void ThirdStageScene::Initialize() {
 	input_ = Input::GetInstance();
+	gThirdStageAudio = Audio::GetInstance();
+	if (gThirdStageAudio != nullptr) {
+		gThirdStageConnectBoxSoundHandle =
+			gThirdStageAudio->LoadWave("connect_box.wav");
+		gThirdStageSwingSoundHandle =
+			gThirdStageAudio->LoadWave("swing.wav");
+		gThirdStageDoorOpenSoundHandle =
+			gThirdStageAudio->LoadWave("open_door.wav");
+	}
+	gThirdStageSwingSoundCooldown = 0.0f;
 
 	player_ = new Player();
 	anchorSwing_ = new AnchorSwingGimmick();
@@ -212,6 +232,24 @@ bool ThirdStageScene::Update() {
 	UpdateDeviceRope();
 	UpdateAnchorColor();
 	UpdatePlayerConnectionColor();
+
+	if (gThirdStageSwingSoundCooldown > 0.0f) {
+		gThirdStageSwingSoundCooldown =
+			(std::max)(0.0f,
+				gThirdStageSwingSoundCooldown - kDeltaTime);
+	}
+
+	if (gThirdStageAudio != nullptr && player_ != nullptr &&
+		anchorSwing_ != nullptr && anchorSwing_->IsConnected() &&
+		gThirdStageSwingSoundCooldown <= 0.0f) {
+		const Vector3 move = player_->GetInputMove();
+		const float moveLengthSq = move.x * move.x + move.z * move.z;
+		if (moveLengthSq > 0.000001f) {
+			gThirdStageAudio->PlayWave(gThirdStageSwingSoundHandle);
+			gThirdStageSwingSoundCooldown =
+				kThirdStageSwingSoundInterval;
+		}
+	}
 
 	return true;
 }
@@ -462,6 +500,10 @@ void ThirdStageScene::UpdateConnection() {
 		if (blockDistance <= kBlockConnectDistance) {
 			blockPulling_ = true;
 			movableBlock_->SetPullingVisual(true);
+			if (gThirdStageAudio != nullptr) {
+				gThirdStageAudio->PlayWave(
+					gThirdStageConnectBoxSoundHandle);
+			}
 			return;
 		}
 	}
@@ -1211,6 +1253,10 @@ void ThirdStageScene::UpdateDeviceConnectionInput() {
         if (canSelectPower && (!canSelectDoor || powerDistance <= doorDistance)) {
             selectedDeviceType_ = DeviceType::kPower;
             power_->SetSelected(true);
+			if (gThirdStageAudio != nullptr) {
+				gThirdStageAudio->PlayWave(
+					gThirdStageConnectBoxSoundHandle);
+			}
         } else {
             selectedDeviceType_ = DeviceType::kDoor;
             power_->SetSelected(false);
@@ -1246,6 +1292,10 @@ void ThirdStageScene::UpdateDoorActivation() {
     if (shouldOpen && !doorActivationApplied_) {
         door_->Open();
         doorActivationApplied_ = true;
+		if (gThirdStageAudio != nullptr) {
+			gThirdStageAudio->PlayWave(
+				gThirdStageDoorOpenSoundHandle);
+		}
     } else if (!shouldOpen && doorActivationApplied_) {
         door_->Reset();
         doorActivationApplied_ = false;
@@ -1751,6 +1801,7 @@ void ThirdStageScene::ResetDemo() {
 	anchorSwing_->Disconnect();
 	movableBlock_->Reset(kBlockStartPosition_);
 	blockPulling_ = false;
+	gThirdStageSwingSoundCooldown = 0.0f;
 	door_->Reset();
 	power_->Reset(kPowerPosition_);
 	deviceSelecting_ = false;
