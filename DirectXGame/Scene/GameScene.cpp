@@ -7,6 +7,8 @@ using namespace KamataEngine;
 
 void GameScene::Initialize() {
 	input_ = Input::GetInstance();
+	audio_ = Audio::GetInstance();
+	catchSoundHandle_ = audio_->LoadWave("SE/catch.wav");
 
 	camera_ = new Camera();
 	player_ = new Player();
@@ -175,6 +177,10 @@ bool GameScene::Update() {
 		return true;
 	}
 
+	const bool wasBlockConnected =
+		connectionState_ == ConnectionState::kConnected;
+	const bool wasSwitchActivated = switchActivated_;
+
 	UpdateConnectionInput();
 
 	switch (connectionState_) {
@@ -224,6 +230,12 @@ bool GameScene::Update() {
 	}
 
 	UpdateRope();
+
+	if ((!wasBlockConnected &&
+		 connectionState_ == ConnectionState::kConnected) ||
+		(!wasSwitchActivated && switchActivated_)) {
+		audio_->PlayWave(catchSoundHandle_, false, 0.7f);
+	}
 
 	return true;
 }

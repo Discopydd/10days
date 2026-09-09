@@ -108,6 +108,8 @@ private:
 
 private:
 	KamataEngine::Input* input_ = nullptr;
+	KamataEngine::Audio* audio_ = nullptr;
+	uint32_t catchSoundHandle_ = 0;
 
 	Player* player_ = nullptr;
 	KamataEngine::Camera* camera_ = nullptr;

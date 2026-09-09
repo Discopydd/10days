@@ -15,6 +15,12 @@ void SceneManager::Initialize() {
 		static_cast<float>(KamataEngine::WinApp::kWindowWidth),
 		static_cast<float>(KamataEngine::WinApp::kWindowHeight)});
 
+	menuTextureHandle_ = KamataEngine::TextureManager::Load("Howto/Menu.png");
+	menuSprite_ = KamataEngine::Sprite::Create(
+		menuTextureHandle_,
+		{16.0f, 16.0f});
+	menuSprite_->SetSize({240.0f, 80.0f});
+
 	ChangeScene(SceneType::kTitle);
 }
 
@@ -138,6 +144,14 @@ void SceneManager::Draw() {
 }
 
 void SceneManager::DrawUI() {
+	const bool isGameScene =
+		currentScene_ == SceneType::kGame ||
+		currentScene_ == SceneType::kSwing ||
+		currentScene_ == SceneType::kThird;
+	if (isGameScene && menuSprite_ != nullptr) {
+		menuSprite_->Draw();
+	}
+
 	if (isHowToVisible_ && howToSprite_ != nullptr) {
 		howToSprite_->Draw();
 	}
@@ -151,6 +165,12 @@ void SceneManager::Finalize() {
 
 	KamataEngine::TextureManager::Unload(howToTextureHandle_);
 	howToTextureHandle_ = 0;
+
+	delete menuSprite_;
+	menuSprite_ = nullptr;
+
+	KamataEngine::TextureManager::Unload(menuTextureHandle_);
+	menuTextureHandle_ = 0;
 }
 
 void SceneManager::ChangeScene(SceneType nextScene) {

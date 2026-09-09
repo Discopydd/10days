@@ -95,6 +95,12 @@ private:
 
 private:
 	KamataEngine::Input* input_ = nullptr;
+	KamataEngine::Audio* audio_ = nullptr;
+	uint32_t swingSoundHandle_ = 0;
+	uint32_t catchSoundHandle_ = 0;
+	uint32_t swingVoiceHandle_ = 0;
+	int swingReplayFrames_ = 0;
+	static constexpr int kSwingReplayIntervalFrames = 120;
 
 	Player* player_ = nullptr;
 	AnchorSwingGimmick* anchorSwing_ = nullptr;

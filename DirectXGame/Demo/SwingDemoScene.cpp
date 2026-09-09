@@ -7,6 +7,9 @@ using namespace KamataEngine;
 
 void SwingDemoScene::Initialize() {
 	input_ = Input::GetInstance();
+	audio_ = Audio::GetInstance();
+	swingSoundHandle_ = audio_->LoadWave("SE/swing.wav");
+	catchSoundHandle_ = audio_->LoadWave("SE/catch.wav");
 
 	player_ = new Player();
 	anchorSwing_ = new AnchorSwingGimmick();
@@ -180,6 +183,10 @@ bool SwingDemoScene::Update() {
 		return true;
 	}
 
+	const bool wasSwingConnected = anchorSwing_->IsConnected();
+	const bool wasBlockConnected = movableBlock_->IsConnected();
+	const bool wasSwitchActivated = switchActivated_;
+
 	UpdateConnection();
 	UpdatePlayer();
 	UpdateSwitch();
@@ -187,6 +194,24 @@ bool SwingDemoScene::Update() {
 	UpdateRope();
 	UpdateBlockRope();
 	UpdateAnchorColor();
+
+	const bool isSwingConnected = anchorSwing_->IsConnected();
+	if (isSwingConnected &&
+		(!wasSwingConnected || swingReplayFrames_ <= 0)) {
+		swingVoiceHandle_ = audio_->PlayWave(swingSoundHandle_, false, 0.55f);
+		swingReplayFrames_ = kSwingReplayIntervalFrames;
+	} else if (isSwingConnected) {
+		--swingReplayFrames_;
+	} else if (wasSwingConnected && !isSwingConnected) {
+		audio_->StopWave(swingVoiceHandle_);
+		swingVoiceHandle_ = 0;
+		swingReplayFrames_ = 0;
+	}
+
+	if ((!wasBlockConnected && movableBlock_->IsConnected()) ||
+		(!wasSwitchActivated && switchActivated_)) {
+		audio_->PlayWave(catchSoundHandle_, false, 0.7f);
+	}
 
 	return true;
 }
@@ -243,6 +268,12 @@ void SwingDemoScene::Draw() {
 }
 
 void SwingDemoScene::Finalize() {
+	if (swingVoiceHandle_ != 0) {
+		audio_->StopWave(swingVoiceHandle_);
+		swingVoiceHandle_ = 0;
+	}
+	swingReplayFrames_ = 0;
+
 	if (player_ != nullptr) {
 		player_->Finalize();
 		delete player_;
@@ -1409,6 +1440,12 @@ void SwingDemoScene::ResetPlayerAfterFall() {
 }
 
 void SwingDemoScene::ResetDemo() {
+	if (swingVoiceHandle_ != 0) {
+		audio_->StopWave(swingVoiceHandle_);
+		swingVoiceHandle_ = 0;
+	}
+	swingReplayFrames_ = 0;
+
 	if (player_ == nullptr || anchorSwing_ == nullptr ||
 		movableBlock_ == nullptr || door_ == nullptr) {
 		return;
