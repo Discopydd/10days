@@ -301,12 +301,12 @@ void GameScene::DrawInteractionPrompt() {
 		return;
 	}
 
-	int targetBlockIndex = -1;
-	if (connectionState_ == ConnectionState::kIdle) {
-		targetBlockIndex = FindNearestConnectableBlock();
-	} else {
-		targetBlockIndex = activeBlockIndex_;
+	// Eを押して接続処理へ入った瞬間から、案内画像は消す。
+	if (connectionState_ != ConnectionState::kIdle) {
+		return;
 	}
+
+	const int targetBlockIndex = FindNearestConnectableBlock();
 
 	if (targetBlockIndex < 0 || targetBlockIndex >= kBlockCount ||
 		movableBlocks_[targetBlockIndex] == nullptr) {
@@ -314,20 +314,8 @@ void GameScene::DrawInteractionPrompt() {
 	}
 
 	const MovableBlockGimmick* block = movableBlocks_[targetBlockIndex];
-	const float distance = Collision::Distance(
-		player_->GetPosition(),
-		block->GetPosition());
-	const float displayDistance =
-		connectionState_ == ConnectionState::kIdle
-			? kConnectDistance
-			: kDisconnectDistance;
-
-	if (distance > displayDistance) {
-		return;
-	}
-
 	Vector3 promptPosition = block->GetPosition();
-	promptPosition.y += block->GetHalfSize().y + 0.82f;
+	promptPosition.y += block->GetHalfSize().y + 1.05f;
 	interactionPrompt_.DrawE(promptPosition, *camera_);
 }
 

@@ -254,18 +254,9 @@ void SwingDemoScene::DrawInteractionPrompt() {
 
 	const Vector3& playerPosition = player_->GetPosition();
 
-	// 接続中は、もう一度Eで解除できる対象を表示する。
-	if (blockPulling_ || movableBlock_->IsConnected()) {
-		Vector3 promptPosition = movableBlock_->GetPosition();
-		promptPosition.y += movableBlock_->GetHalfSize().y + 0.82f;
-		interactionPrompt_.DrawE(promptPosition, *camera_);
-		return;
-	}
-
-	if (anchorSwing_->IsConnected()) {
-		interactionPrompt_.DrawE(
-			{kAnchorPosition_.x, kAnchorPosition_.y + 0.90f, kAnchorPosition_.z},
-			*camera_);
+	// Eを押して接続処理へ入った後は、解除案内として残さず非表示にする。
+	if (blockPulling_ || movableBlock_->IsConnected() ||
+		anchorSwing_->IsConnected()) {
 		return;
 	}
 
@@ -276,7 +267,7 @@ void SwingDemoScene::DrawInteractionPrompt() {
 	if (!movableBlock_->IsLocked() && IsPlayerGrounded() &&
 		blockDistance <= kBlockConnectDistance) {
 		Vector3 promptPosition = movableBlock_->GetPosition();
-		promptPosition.y += movableBlock_->GetHalfSize().y + 0.82f;
+		promptPosition.y += movableBlock_->GetHalfSize().y + 1.05f;
 		interactionPrompt_.DrawE(promptPosition, *camera_);
 		return;
 	}
@@ -286,7 +277,7 @@ void SwingDemoScene::DrawInteractionPrompt() {
 		kAnchorPosition_);
 	if (anchorDistance <= anchorSwing_->GetSettings().connectDistance) {
 		interactionPrompt_.DrawE(
-			{kAnchorPosition_.x, kAnchorPosition_.y + 0.90f, kAnchorPosition_.z},
+			{kAnchorPosition_.x, kAnchorPosition_.y + 1.10f, kAnchorPosition_.z},
 			*camera_);
 	}
 }

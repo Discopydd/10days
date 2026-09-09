@@ -285,23 +285,16 @@ void ThirdStageScene::DrawInteractionPrompt() {
 
 	const Vector3& playerPosition = player_->GetPosition();
 
-	// E：箱またはアンカーへの接続 / 解除。
-	if (blockPulling_ || movableBlock_->IsConnected()) {
-		Vector3 promptPosition = movableBlock_->GetPosition();
-		promptPosition.y += movableBlock_->GetHalfSize().y + 0.82f;
-		interactionPrompt_.DrawE(promptPosition, *camera_);
-	} else if (anchorSwing_->IsConnected()) {
-		interactionPrompt_.DrawE(
-			{kAnchorPosition_.x, kAnchorPosition_.y + 0.90f, kAnchorPosition_.z},
-			*camera_);
-	} else {
+	// E：接続前だけ箱またはアンカーに表示し、押した後はすぐ消す。
+	if (!blockPulling_ && !movableBlock_->IsConnected() &&
+		!anchorSwing_->IsConnected()) {
 		const float blockDistance = Collision::Distance(
 			playerPosition,
 			movableBlock_->GetPosition());
 		if (!movableBlock_->IsLocked() && IsPlayerGrounded() &&
 			blockDistance <= kBlockConnectDistance) {
 			Vector3 promptPosition = movableBlock_->GetPosition();
-			promptPosition.y += movableBlock_->GetHalfSize().y + 0.82f;
+			promptPosition.y += movableBlock_->GetHalfSize().y + 1.05f;
 			interactionPrompt_.DrawE(promptPosition, *camera_);
 		} else {
 			const float anchorDistance = Collision::Distance(
@@ -309,7 +302,7 @@ void ThirdStageScene::DrawInteractionPrompt() {
 				kAnchorPosition_);
 			if (anchorDistance <= anchorSwing_->GetSettings().connectDistance) {
 				interactionPrompt_.DrawE(
-					{kAnchorPosition_.x, kAnchorPosition_.y + 0.90f, kAnchorPosition_.z},
+					{kAnchorPosition_.x, kAnchorPosition_.y + 1.10f, kAnchorPosition_.z},
 					*camera_);
 			}
 		}
@@ -327,13 +320,13 @@ void ThirdStageScene::DrawInteractionPrompt() {
 
 	auto drawPowerPrompt = [this]() {
 		Vector3 promptPosition = power_->GetPosition();
-		promptPosition.y += kPowerScale_.y + 0.82f;
+		promptPosition.y += kPowerScale_.y + 1.05f;
 		interactionPrompt_.DrawF(promptPosition, *camera_);
 	};
 
 	auto drawDoorPrompt = [this, &doorPosition]() {
 		Vector3 promptPosition = doorPosition;
-		promptPosition.y += kDoorScale_.y + 0.82f;
+		promptPosition.y += kDoorScale_.y + 1.05f;
 		interactionPrompt_.DrawF(promptPosition, *camera_);
 	};
 

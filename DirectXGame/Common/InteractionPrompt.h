@@ -66,17 +66,18 @@ private:
 
 		const float phase = blinkTime_ / kBlinkPeriod * kTwoPi;
 		const float pulse = 0.5f + std::sin(phase) * 0.5f;
-		const float scale = kBaseScale * (0.94f + pulse * 0.06f);
-		const float brightness = 0.58f + pulse * 0.42f;
+		const float scale = kBaseScale * (0.90f + pulse * 0.20f);
+		const float brightness = 0.85f + pulse * 0.45f;
 
 		worldTransform_.translation_ = {
 			position.x,
 			position.y + pulse * kBobHeight,
 			position.z,
 		};
+		// カメラと同じ回転を与え、画像の正面を常に画面へ向ける。
 		worldTransform_.rotation_ = {
-			-camera.rotation_.x,
-			-camera.rotation_.y,
+			camera.rotation_.x,
+			camera.rotation_.y,
 			0.0f,
 		};
 		worldTransform_.scale_ = {
@@ -105,11 +106,11 @@ private:
 	float blinkTime_ = 0.0f;
 
 	static constexpr float kDeltaTime = 1.0f / 60.0f;
-	static constexpr float kBlinkPeriod = 0.85f;
+	static constexpr float kBlinkPeriod = 0.75f;
 	static constexpr float kTwoPi = 6.28318530718f;
-	static constexpr float kBaseScale = 0.58f;
+	static constexpr float kBaseScale = 0.50f;
 	static constexpr float kPanelDepth = 0.035f;
-	static constexpr float kBobHeight = 0.12f;
+	static constexpr float kBobHeight = 0.18f;
 	static constexpr float kEAspectRatio = 764.0f / 716.0f;
 	static constexpr float kFAspectRatio = 745.0f / 714.0f;
 };
