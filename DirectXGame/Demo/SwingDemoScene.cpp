@@ -21,7 +21,7 @@ void SwingDemoScene::Initialize() {
 	ropeModel_ = Model::CreateFromOBJ("cube");
 	blockModel_ = Model::CreateFromOBJ("cubu");
 	switchModel_ = Model::CreateFromOBJ("select_panel");
-	doorModel_ = Model::CreateFromOBJ("cube");
+	doorModel_ = Model::CreateFromOBJ("door");
 	interactionPrompt_.Initialize();
 
 	camera_->Initialize();

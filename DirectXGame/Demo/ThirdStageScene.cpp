@@ -22,7 +22,7 @@ void ThirdStageScene::Initialize() {
 	ropeModel_ = Model::CreateFromOBJ("cube");
 	blockModel_ = Model::CreateFromOBJ("cubu");
 	switchModel_ = Model::CreateFromOBJ("select_panel");
-	doorModel_ = Model::CreateFromOBJ("cube");
+	doorModel_ = Model::CreateFromOBJ("door");
 	powerModel_ = Model::CreateFromOBJ("power");
 	interactionPrompt_.Initialize();
 

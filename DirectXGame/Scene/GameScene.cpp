@@ -21,7 +21,7 @@ void GameScene::Initialize() {
 	// --------------------------------------------------------
 	blockModel_ = Model::CreateFromOBJ("cubu");
 	switchModel_ = Model::CreateFromOBJ("select_panel");
-	doorModel_ = Model::CreateFromOBJ("cube");
+	doorModel_ = Model::CreateFromOBJ("door");
 	goalModel_ = Model::CreateFromOBJ("select_panel");
 	floorModel_ = Model::CreateFromOBJ("floorwood");
 	wallModel_ = Model::CreateFromOBJ("wallwood");
