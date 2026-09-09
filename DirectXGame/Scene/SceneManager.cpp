@@ -7,10 +7,28 @@
 #include "../Demo/ThirdStageScene.h"
 
 void SceneManager::Initialize() {
+	howToTextureHandle_ = KamataEngine::TextureManager::Load("Howto/Howto.png");
+	howToSprite_ = KamataEngine::Sprite::Create(
+		howToTextureHandle_,
+		{0.0f, 0.0f});
+	howToSprite_->SetSize({
+		static_cast<float>(KamataEngine::WinApp::kWindowWidth),
+		static_cast<float>(KamataEngine::WinApp::kWindowHeight)});
+
 	ChangeScene(SceneType::kTitle);
 }
 
 bool SceneManager::Update() {
+	const bool isGameScene =
+		currentScene_ == SceneType::kGame ||
+		currentScene_ == SceneType::kSwing ||
+		currentScene_ == SceneType::kThird;
+	if (!isGameScene) {
+		isHowToVisible_ = false;
+	} else if (KamataEngine::Input::GetInstance()->TriggerKey(DIK_TAB)) {
+		isHowToVisible_ = !isHowToVisible_;
+	}
+
 	switch (currentScene_) {
 	case SceneType::kTitle: {
 		if (titleScene_ == nullptr || !titleScene_->Update()) {
@@ -119,8 +137,20 @@ void SceneManager::Draw() {
 	}
 }
 
+void SceneManager::DrawUI() {
+	if (isHowToVisible_ && howToSprite_ != nullptr) {
+		howToSprite_->Draw();
+	}
+}
+
 void SceneManager::Finalize() {
 	DeleteCurrentScene();
+
+	delete howToSprite_;
+	howToSprite_ = nullptr;
+
+	KamataEngine::TextureManager::Unload(howToTextureHandle_);
+	howToTextureHandle_ = 0;
 }
 
 void SceneManager::ChangeScene(SceneType nextScene) {
