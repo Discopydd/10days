@@ -74,6 +74,9 @@
     <ClInclude Include="Common\Collision.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Common\InteractionPrompt.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
     <ClInclude Include="Gimmick\MovableBlockGimmick.h">
       <Filter>Gimmick</Filter>
     </ClInclude>

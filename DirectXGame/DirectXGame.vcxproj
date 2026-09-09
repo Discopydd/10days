@@ -195,6 +195,7 @@ xcopy "$(ProjectDir)..\External\KamataEngine\shaders" "$(ProjectDir)Resources\En
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\Collision.h" />
+    <ClInclude Include="Common\InteractionPrompt.h" />
     <ClInclude Include="Demo\GimmickDemoScene.h" />
     <ClInclude Include="Gimmick\MovableBlockGimmick.h" />
     <ClInclude Include="Gimmick\SwitchDoorGimmick.h" />

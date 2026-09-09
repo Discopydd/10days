@@ -22,11 +22,12 @@ void SwingDemoScene::Initialize() {
 	anchorModel_ = Model::CreateFromOBJ("anchor");
 	floorModel_ = Model::CreateFromOBJ("floorwood");
 	wallModel_ = Model::CreateFromOBJ("wallwood");
-	goalModel_ = Model::CreateFromOBJ("cube");
+	goalModel_ = Model::CreateFromOBJ("select_panel");
 	ropeModel_ = Model::CreateFromOBJ("cube");
 	blockModel_ = Model::CreateFromOBJ("cubu");
-	switchModel_ = Model::CreateFromOBJ("cube");
-	doorModel_ = Model::CreateFromOBJ("cube");
+	switchModel_ = Model::CreateFromOBJ("select_panel");
+	doorModel_ = Model::CreateFromOBJ("door");
+	interactionPrompt_.Initialize();
 
 	camera_->Initialize();
 	camera_->translation_ = {0.6f, 22.0f, -27.5f};
@@ -147,10 +148,10 @@ void SwingDemoScene::Initialize() {
 	wallColor_.SetColor({0.78f, 0.80f, 0.83f, 1.0f});
 
 	switchColor_.Initialize();
-	switchColor_.SetColor({0.20f, 0.90f, 0.25f, 1.0f});
+	switchColor_.SetColor({0.95f, 0.20f, 0.20f, 1.0f});
 
 	goalColor_.Initialize();
-	goalColor_.SetColor({0.20f, 0.85f, 0.90f, 1.0f});
+	goalColor_.SetColor({1.0f, 0.85f, 0.15f, 1.0f});
 
 	ropeColor_.Initialize();
 	ropeColor_.SetColor({1.0f, 0.90f, 0.20f, 1.0f});
@@ -180,6 +181,7 @@ bool SwingDemoScene::Update() {
 
 	// ドアはスイッチ作動後に毎フレーム上昇する。
 	door_->Update();
+	interactionPrompt_.Update();
 
 	if (isClear_) {
 		return true;
@@ -274,6 +276,44 @@ void SwingDemoScene::Draw() {
 			*camera_,
 			&blockRopeColor_);
 	}
+
+	DrawInteractionPrompt();
+}
+
+void SwingDemoScene::DrawInteractionPrompt() {
+	if (player_ == nullptr || anchorSwing_ == nullptr ||
+		movableBlock_ == nullptr || camera_ == nullptr || isClear_) {
+		return;
+	}
+
+	const Vector3& playerPosition = player_->GetPosition();
+
+	// Eを押して接続処理へ入った後は、解除案内として残さず非表示にする。
+	if (blockPulling_ || movableBlock_->IsConnected() ||
+		anchorSwing_->IsConnected()) {
+		return;
+	}
+
+	// 箱とアンカーが同時に範囲内なら、実際の入力処理と同じく箱を優先する。
+	const float blockDistance = Collision::Distance(
+		playerPosition,
+		movableBlock_->GetPosition());
+	if (!movableBlock_->IsLocked() && IsPlayerGrounded() &&
+		blockDistance <= kBlockConnectDistance) {
+		Vector3 promptPosition = movableBlock_->GetPosition();
+		promptPosition.y += movableBlock_->GetHalfSize().y + 1.05f;
+		interactionPrompt_.DrawE(promptPosition, *camera_);
+		return;
+	}
+
+	const float anchorDistance = Collision::Distance(
+		playerPosition,
+		kAnchorPosition_);
+	if (anchorDistance <= anchorSwing_->GetSettings().connectDistance) {
+		interactionPrompt_.DrawE(
+			{kAnchorPosition_.x, kAnchorPosition_.y + 1.10f, kAnchorPosition_.z},
+			*camera_);
+	}
 }
 
 void SwingDemoScene::Finalize() {
@@ -297,6 +337,7 @@ void SwingDemoScene::Finalize() {
 
 	delete door_;
 	door_ = nullptr;
+	interactionPrompt_.Finalize();
 
 	delete camera_;
 	camera_ = nullptr;
@@ -942,7 +983,6 @@ void SwingDemoScene::UpdateSwitch() {
 	movableBlock_->SnapAndLock(snapPosition);
 
 	switchActivated_ = true;
-	switchColor_.SetColor({1.0f, 0.85f, 0.15f, 1.0f});
 	door_->Open();
 }
 
@@ -1060,7 +1100,6 @@ void SwingDemoScene::UpdateGoal() {
 		}
 		playerVelocity_ = {};
 
-		goalColor_.SetColor({1.0f, 0.80f, 0.10f, 1.0f});
 	}
 }
 
@@ -1470,10 +1509,11 @@ void SwingDemoScene::ResetDemo() {
 	player_->Reset(kPlayerStartPosition_);
 
 	switchActivated_ = false;
-	switchColor_.SetColor({0.20f, 0.90f, 0.25f, 1.0f});
+	switchColor_.SetColor({0.95f, 0.20f, 0.20f, 1.0f});
 
 	isClear_ = false;
-	goalColor_.SetColor({0.20f, 0.85f, 0.90f, 1.0f});
+	goalColor_.SetColor({1.0f, 0.85f, 0.15f, 1.0f});
+	interactionPrompt_.ResetAnimation();
 
 	UpdateAnchorColor();
 }

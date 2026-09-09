@@ -24,12 +24,13 @@ void GameScene::Initialize() {
 	// モデル
 	// --------------------------------------------------------
 	blockModel_ = Model::CreateFromOBJ("cubu");
-	switchModel_ = Model::CreateFromOBJ("cube");
-	doorModel_ = Model::CreateFromOBJ("cube");
-	goalModel_ = Model::CreateFromOBJ("cube");
+	switchModel_ = Model::CreateFromOBJ("select_panel");
+	doorModel_ = Model::CreateFromOBJ("door");
+	goalModel_ = Model::CreateFromOBJ("select_panel");
 	floorModel_ = Model::CreateFromOBJ("floorwood");
 	wallModel_ = Model::CreateFromOBJ("wallwood");
 	ropeModel_ = Model::CreateFromOBJ("cube");
+	interactionPrompt_.Initialize();
 
 	// --------------------------------------------------------
 	// カメラ
@@ -56,7 +57,7 @@ void GameScene::Initialize() {
 	}
 
 	// --------------------------------------------------------
-	// 右上のスイッチ
+	// 右上の箱子摆放底座
 	// --------------------------------------------------------
 	InitializeTransform(
 		switchWorldTransform_,
@@ -64,7 +65,7 @@ void GameScene::Initialize() {
 		kSwitchScale_);
 
 	switchColor_.Initialize();
-	switchColor_.SetColor({0.20f, 0.90f, 0.25f, 1.0f});
+	switchColor_.SetColor({0.95f, 0.20f, 0.20f, 1.0f});
 
 	switchAABB_ = Collision::MakeAABB(
 		kSwitchPosition_,
@@ -80,7 +81,7 @@ void GameScene::Initialize() {
 		4.0f);
 
 	// --------------------------------------------------------
-	// GOAL
+	// GOAL底座
 	// --------------------------------------------------------
 	InitializeTransform(
 		goalWorldTransform_,
@@ -88,7 +89,7 @@ void GameScene::Initialize() {
 		kGoalScale_);
 
 	goalColor_.Initialize();
-	goalColor_.SetColor({0.20f, 0.85f, 0.90f, 1.0f});
+	goalColor_.SetColor({1.0f, 0.85f, 0.15f, 1.0f});
 
 	goalAABB_ = Collision::MakeAABB(
 		kGoalPosition_,
@@ -173,6 +174,7 @@ bool GameScene::Update() {
 
 	// ドアの開閉アニメーションは毎フレーム更新する
 	door_->Update();
+	interactionPrompt_.Update();
 
 	// クリア後はその場で停止し、Rでやり直せるようにする
 	if (isClear_) {
@@ -280,7 +282,7 @@ void GameScene::Draw() {
 			&wallColor_);
 	}
 
-	// GOAL
+	// GOAL底座
 	goalModel_->Draw(
 		goalWorldTransform_,
 		*camera_,
@@ -311,6 +313,31 @@ void GameScene::Draw() {
 			*camera_,
 			&ropeColor_);
 	}
+
+	DrawInteractionPrompt();
+}
+
+void GameScene::DrawInteractionPrompt() {
+	if (player_ == nullptr || camera_ == nullptr || isClear_) {
+		return;
+	}
+
+	// Eを押して接続処理へ入った瞬間から、案内画像は消す。
+	if (connectionState_ != ConnectionState::kIdle) {
+		return;
+	}
+
+	const int targetBlockIndex = FindNearestConnectableBlock();
+
+	if (targetBlockIndex < 0 || targetBlockIndex >= kBlockCount ||
+		movableBlocks_[targetBlockIndex] == nullptr) {
+		return;
+	}
+
+	const MovableBlockGimmick* block = movableBlocks_[targetBlockIndex];
+	Vector3 promptPosition = block->GetPosition();
+	promptPosition.y += block->GetHalfSize().y + 1.05f;
+	interactionPrompt_.DrawE(promptPosition, *camera_);
 }
 
 void GameScene::Finalize() {
@@ -327,6 +354,7 @@ void GameScene::Finalize() {
 
 	delete door_;
 	door_ = nullptr;
+	interactionPrompt_.Finalize();
 
 	delete camera_;
 	camera_ = nullptr;
@@ -951,7 +979,6 @@ void GameScene::UpdateSwitch() {
 		movableBlocks_[i]->SnapAndLock(snapPosition);
 
 		switchActivated_ = true;
-		switchColor_.SetColor({1.0f, 0.85f, 0.15f, 1.0f});
 
 		// ----------------------------------------------------
 		// スイッチ作動 → 中央ドアOPEN
@@ -980,8 +1007,6 @@ void GameScene::UpdateGoal() {
 		isClear_ = true;
 		CancelConnection();
 
-		// クリアしたことが見た目で分かるようにGOALを黄色へ変更する
-		goalColor_.SetColor({1.0f, 0.80f, 0.10f, 1.0f});
 	}
 }
 
@@ -1072,8 +1097,9 @@ void GameScene::ResetGame() {
 	activeBlockIndex_ = -1;
 
 	switchActivated_ = false;
-	switchColor_.SetColor({0.20f, 0.90f, 0.25f, 1.0f});
+	switchColor_.SetColor({0.95f, 0.20f, 0.20f, 1.0f});
 
 	isClear_ = false;
-	goalColor_.SetColor({0.20f, 0.85f, 0.90f, 1.0f});
+	goalColor_.SetColor({1.0f, 0.85f, 0.15f, 1.0f});
+	interactionPrompt_.ResetAnimation();
 }

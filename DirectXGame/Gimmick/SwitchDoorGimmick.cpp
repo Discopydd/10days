@@ -21,8 +21,8 @@ void SwitchDoorGimmick::Initialize(
 	worldTransform_.UpdateMatarix();
 
 	objectColor_.Initialize();
-	// 閉じているドアは濃い青で表示する
-	objectColor_.SetColor({0.15f, 0.30f, 0.85f, 1.0f});
+	// ドアの色は専用テクスチャをそのまま表示する
+	objectColor_.SetColor({1.0f, 1.0f, 1.0f, 1.0f});
 }
 
 void SwitchDoorGimmick::Update() {
@@ -53,14 +53,14 @@ void SwitchDoorGimmick::Draw(const Camera& camera) {
 void SwitchDoorGimmick::Open() {
 	openRequested_ = true;
 	// 開き始めたことが分かるように少し明るくする
-	objectColor_.SetColor({0.25f, 0.55f, 1.0f, 1.0f});
+	objectColor_.SetColor({0.80f, 1.0f, 1.0f, 1.0f});
 }
 
 void SwitchDoorGimmick::Reset() {
 	worldTransform_.translation_ = closedPosition_;
 	openRequested_ = false;
 	isOpen_ = false;
-	objectColor_.SetColor({0.15f, 0.30f, 0.85f, 1.0f});
+	objectColor_.SetColor({1.0f, 1.0f, 1.0f, 1.0f});
 	worldTransform_.UpdateMatarix();
 }
 
@@ -81,4 +81,8 @@ Collision::AABB SwitchDoorGimmick::GetAABB() const {
 	}
 
 	return Collision::MakeAABB(worldTransform_.translation_, halfSize_);
+}
+
+const Vector3& SwitchDoorGimmick::GetCurrentPosition() const {
+	return worldTransform_.translation_;
 }

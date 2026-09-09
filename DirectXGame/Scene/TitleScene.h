@@ -19,6 +19,7 @@ public:
 
 	SceneType GetRequestedScene() const;
 	void Reset();
+	bool IsTitlePage() const { return page_ == Page::kTitle; }
 
 private:
 	enum class Page {
@@ -26,22 +27,12 @@ private:
 		kInstruction,
 	};
 
-	void InitializeTransform(
-	    KamataEngine::WorldTransform& transform,
-	    const KamataEngine::Vector3& position,
-	    const KamataEngine::Vector3& scale);
-
 private:
 	KamataEngine::Input* input_ = nullptr;
 	KamataEngine::Audio* audio_ = nullptr;
 	uint32_t decisionSoundHandle_ = 0;
-	KamataEngine::Camera camera_;
-
-	KamataEngine::Model* titleModel_ = nullptr;
-	KamataEngine::Model* instructionModel_ = nullptr;
-
-	KamataEngine::WorldTransform panelTransform_;
-	KamataEngine::ObjectColor panelColor_;
+	KamataEngine::Sprite* titleSprite_ = nullptr;
+	KamataEngine::Sprite* instructionSprite_ = nullptr;
 
 	Page page_ = Page::kTitle;
 	SceneType requestedScene_ = SceneType::kNone;

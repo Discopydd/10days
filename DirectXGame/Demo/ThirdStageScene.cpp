@@ -23,15 +23,16 @@ void ThirdStageScene::Initialize() {
 	anchorModel_ = Model::CreateFromOBJ("anchor");
 	floorModel_ = Model::CreateFromOBJ("floorwood");
 	wallModel_ = Model::CreateFromOBJ("wallwood");
-	goalModel_ = Model::CreateFromOBJ("cube");
+	goalModel_ = Model::CreateFromOBJ("select_panel");
 	ropeModel_ = Model::CreateFromOBJ("cube");
 	blockModel_ = Model::CreateFromOBJ("cubu");
-	switchModel_ = Model::CreateFromOBJ("cube");
-	doorModel_ = Model::CreateFromOBJ("cube");
-	powerModel_ = Model::CreateFromOBJ("cube");
+	switchModel_ = Model::CreateFromOBJ("select_panel");
+	doorModel_ = Model::CreateFromOBJ("door");
+	powerModel_ = Model::CreateFromOBJ("power");
+	interactionPrompt_.Initialize();
 
 	camera_->Initialize();
-	camera_->translation_ = {0.6f, 22.0f, -27.5f};
+	camera_->translation_ = {0.8f, 22.0f, -27.5f};
 	camera_->rotation_ = {0.66f, 0.0f, 0.0f};
 	camera_->UpdateMatrix();
 
@@ -43,16 +44,20 @@ void ThirdStageScene::Initialize() {
 		kAnchorPosition_,
 		{0.55f, 0.55f, 0.55f});
 
-	// 左右の足場。外壁へ少し重ねて背景が見える隙間を消し、
-	// 中央の落下穴は摆荡しやすい幅まで少し縮める。
+	// 第3关は第二关と逆の流れにする。
+	// 0: 開始～電源/箱/ゲート～助走区まで続く大平台
+	// 1: 最後にスウィングで渡るGOAL島
+	// 落下穴が狭いとPlayerのAABBが両側の床へ同時に掛かり、
+	// 落下中に床端へめり込んで見えるため、穴幅を約3.5まで広げる。
+	// 大平台右端 x=4.5 / GOAL島左端 x=8.0。
 	const Vector3 floorPositions[kFloorCount] = {
-		{-7.5f, -0.15f, 0.0f},
-		{8.25f, -0.15f, 0.0f},
+		{-3.5f, -0.15f, 0.0f},
+		{10.5f, -0.15f, 0.0f},
 	};
 
 	const Vector3 floorScales[kFloorCount] = {
-		{4.45f, 0.15f, 6.15f},
-		{4.95f, 0.15f, 6.15f},
+		{8.0f, 0.15f, 5.65f},
+		{2.5f, 0.15f, 5.65f},
 	};
 
 	for (int i = 0; i < kFloorCount; ++i) {
@@ -66,26 +71,25 @@ void ThirdStageScene::Initialize() {
 			floorScales[i]);
 	}
 
-	// 外周4枚 + 右足場の縦向き仕切り壁2枚。
-	// ステージ全体と右足場を広げ、机关の下側にも十分な操作空間を確保する。
-	// x=9.6 のラインで右足場を「机关区」と「GOAL区」に分け、
-	// z=-1.2～1.2 の中央だけをドア通路として空ける。
+	// 外周4枚 + x=1.5のゲート仕切り壁2枚。
+	// 開始側には落下穴を置かず、電源と箱の解謎を先に行う。
+	// z=-1.2～1.2だけをドア通路として空け、開門後に助走区へ進む。
 	const Vector3 wallPositions[kWallCount] = {
-		{-12.0f, 0.5f, 0.0f},
-		{13.4f, 0.5f, 0.0f},
-		{0.7f, 0.5f, -6.3f},
-		{0.7f, 0.5f, 6.3f},
-		{9.6f, 1.5f, -3.75f},
-		{9.6f, 1.5f, 3.75f},
+		{-11.75f, 0.5f, 0.0f},
+		{13.25f, 0.5f, 0.0f},
+		{0.75f, 0.5f, -5.85f},
+		{0.75f, 0.5f, 5.85f},
+		{1.5f, 1.5f, -3.6f},
+		{1.5f, 1.5f, 3.6f},
 	};
 
 	const Vector3 wallScales[kWallCount] = {
-		{0.25f, 0.5f, 6.5f},
-		{0.25f, 0.5f, 6.5f},
-		{13.0f, 0.5f, 0.25f},
-		{13.0f, 0.5f, 0.25f},
-		{0.35f, 1.5f, 2.55f},
-		{0.35f, 1.5f, 2.55f},
+		{0.25f, 0.5f, 6.0f},
+		{0.25f, 0.5f, 6.0f},
+		{12.75f, 0.5f, 0.25f},
+		{12.75f, 0.5f, 0.25f},
+		{0.35f, 1.5f, 2.4f},
+		{0.35f, 1.5f, 2.4f},
 	};
 
 	for (int i = 0; i < kWallCount; ++i) {
@@ -98,13 +102,13 @@ void ThirdStageScene::Initialize() {
 			wallScales[i]);
 	}
 
-	// 右足場：移動ブロック
+	// ゲート手前：移動ブロック
 	movableBlock_->Initialize(
 		blockModel_,
 		kBlockStartPosition_,
 		kBlockScale_);
 
-	// 右足場：スイッチ
+	// ゲート手前：スイッチ
 	InitializeTransform(
 		switchTransform_,
 		kSwitchPosition_,
@@ -113,7 +117,7 @@ void ThirdStageScene::Initialize() {
 		kSwitchPosition_,
 		kSwitchScale_);
 
-	// 右足場：ドア
+	// 中央ゲート
 	door_->Initialize(
 		doorModel_,
 		kDoorPosition_,
@@ -126,7 +130,7 @@ void ThirdStageScene::Initialize() {
 		kPowerPosition_,
 		kPowerScale_);
 
-	// ドアの奥：GOAL
+	// 最終スウィング先：GOAL
 	InitializeTransform(
 		goalTransform_,
 		kGoalPosition_,
@@ -160,10 +164,10 @@ void ThirdStageScene::Initialize() {
 	wallColor_.SetColor({0.78f, 0.80f, 0.83f, 1.0f});
 
 	switchColor_.Initialize();
-	switchColor_.SetColor({0.20f, 0.90f, 0.25f, 1.0f});
+	switchColor_.SetColor({0.95f, 0.20f, 0.20f, 1.0f});
 
 	goalColor_.Initialize();
-	goalColor_.SetColor({0.20f, 0.85f, 0.90f, 1.0f});
+	goalColor_.SetColor({1.0f, 0.85f, 0.15f, 1.0f});
 
 	ropeColor_.Initialize();
 	ropeColor_.SetColor({1.0f, 0.90f, 0.20f, 1.0f});
@@ -194,8 +198,9 @@ bool ThirdStageScene::Update() {
 		return true;
 	}
 
-	// ドアはスイッチ作動後に毎フレーム上昇する。
+	// 双条件成立後、ドアは毎フレーム上昇する。
 	door_->Update();
+	interactionPrompt_.Update();
 
 	if (isClear_) {
 		return true;
@@ -302,6 +307,89 @@ void ThirdStageScene::Draw() {
 			*camera_,
 			&deviceRopeColor_);
 	}
+
+	DrawInteractionPrompt();
+}
+
+void ThirdStageScene::DrawInteractionPrompt() {
+	if (player_ == nullptr || anchorSwing_ == nullptr ||
+		movableBlock_ == nullptr || power_ == nullptr ||
+		door_ == nullptr || camera_ == nullptr || isClear_) {
+		return;
+	}
+
+	const Vector3& playerPosition = player_->GetPosition();
+
+	// E：接続前だけ箱またはアンカーに表示し、押した後はすぐ消す。
+	if (!blockPulling_ && !movableBlock_->IsConnected() &&
+		!anchorSwing_->IsConnected()) {
+		const float blockDistance = Collision::Distance(
+			playerPosition,
+			movableBlock_->GetPosition());
+		if (!movableBlock_->IsLocked() && IsPlayerGrounded() &&
+			blockDistance <= kBlockConnectDistance) {
+			Vector3 promptPosition = movableBlock_->GetPosition();
+			promptPosition.y += movableBlock_->GetHalfSize().y + 1.05f;
+			interactionPrompt_.DrawE(promptPosition, *camera_);
+		} else {
+			const float anchorDistance = Collision::Distance(
+				playerPosition,
+				kAnchorPosition_);
+			if (anchorDistance <= anchorSwing_->GetSettings().connectDistance) {
+				interactionPrompt_.DrawE(
+					{kAnchorPosition_.x, kAnchorPosition_.y + 1.10f, kAnchorPosition_.z},
+					*camera_);
+			}
+		}
+	}
+
+	// F：未接続時は選択可能な装置、選択中は次の装置、
+	// 接続後は解除可能な電源の頭上に表示する。
+	const float powerDistance = Collision::Distance(
+		playerPosition,
+		power_->GetPosition());
+	const Vector3 doorPosition = GetDoorCenter();
+	const float doorDistance = Collision::Distance(
+		playerPosition,
+		doorPosition);
+
+	auto drawPowerPrompt = [this]() {
+		Vector3 promptPosition = power_->GetPosition();
+		promptPosition.y += kPowerScale_.y + 1.05f;
+		interactionPrompt_.DrawF(promptPosition, *camera_);
+	};
+
+	auto drawDoorPrompt = [this, &doorPosition]() {
+		Vector3 promptPosition = doorPosition;
+		promptPosition.y += kDoorScale_.y + 1.05f;
+		interactionPrompt_.DrawF(promptPosition, *camera_);
+	};
+
+	if (deviceConnected_) {
+		if (powerDistance <= kDeviceConnectDistance) {
+			drawPowerPrompt();
+		}
+		return;
+	}
+
+	if (deviceSelecting_) {
+		if (selectedDeviceType_ == DeviceType::kPower &&
+			doorDistance <= kDeviceConnectDistance) {
+			drawDoorPrompt();
+		} else if (selectedDeviceType_ == DeviceType::kDoor &&
+			powerDistance <= kDeviceConnectDistance) {
+			drawPowerPrompt();
+		}
+		return;
+	}
+
+	const bool canSelectPower = powerDistance <= kDeviceConnectDistance;
+	const bool canSelectDoor = doorDistance <= kDeviceConnectDistance;
+	if (canSelectPower && (!canSelectDoor || powerDistance <= doorDistance)) {
+		drawPowerPrompt();
+	} else if (canSelectDoor) {
+		drawDoorPrompt();
+	}
 }
 
 void ThirdStageScene::Finalize() {
@@ -328,6 +416,7 @@ void ThirdStageScene::Finalize() {
 
 	delete power_;
 	power_ = nullptr;
+	interactionPrompt_.Finalize();
 
 	delete camera_;
 	camera_ = nullptr;
@@ -403,7 +492,7 @@ void ThirdStageScene::UpdateConnection() {
 		return;
 	}
 
-	// 右足場で箱が近い場合は箱接続を優先する。
+	// ゲート手前の大平台では箱接続を優先する。
 	// 第一关と同様、すぐ接続完了にはせず「お互いに引き寄せる」状態へ入る。
 	if (!movableBlock_->IsLocked() && IsPlayerGrounded()) {
 		const float blockDistance = Collision::Distance(
@@ -445,7 +534,14 @@ bool ThirdStageScene::HasGateBarrierCollision(
 
 	const Collision::AABB playerAABB = player_->GetAABBAt(position);
 
-	// 右足場の仕切り壁は、摆荡中でも上から飛び越えられないよう
+	// 紫色電源は見た目だけではなく実体障害物。
+	// 地上・空中・スウィング中のどの状態でも内部へ入れない。
+	if (power_ != nullptr &&
+		Collision::IsOverlap(playerAABB, power_->GetAABB())) {
+		return true;
+	}
+
+	// ゲート仕切り壁は、スウィング中でも上から飛び越えられないよう
 	// XZ平面で通行を制限する。
 	for (int i = 4; i < kWallCount; ++i) {
 		if (Collision::IsOverlapXZ(playerAABB, wallAABBs_[i])) {
@@ -504,7 +600,7 @@ Vector3 ThirdStageScene::MoveGroundPlayerWithCollision(
 		return {};
 	}
 
-	Collision::AABB obstacles[kWallCount + 1]{};
+	Collision::AABB obstacles[kWallCount + 2]{};
 	int count = 0;
 
 	for (int i = 0; i < kWallCount; ++i) {
@@ -513,6 +609,11 @@ Vector3 ThirdStageScene::MoveGroundPlayerWithCollision(
 
 	if (door_ != nullptr && door_->IsBlocking()) {
 		obstacles[count++] = door_->GetAABB();
+	}
+
+	// 紫色電源もPlayer用の固定障害物として登録する。
+	if (power_ != nullptr) {
+		obstacles[count++] = power_->GetAABB();
 	}
 
 	Collision::AABB blockAABB{};
@@ -536,36 +637,40 @@ void ThirdStageScene::PrepareBlockObstacles() {
 
 	movableBlock_->ClearObstacles();
 
-	// 右足場の仕切り壁。
-	movableBlock_->AddObstacle(wallAABBs_[4]);
-	movableBlock_->AddObstacle(wallAABBs_[5]);
+	// 第3关の箱は開始側の大平台で操作するため、外周・ゲート壁をすべて登録。
+	for (int i = 0; i < kWallCount; ++i) {
+		movableBlock_->AddObstacle(wallAABBs_[i]);
+	}
 
-	// 閉じているドア。
+	// 閉じている中央ゲート。
 	if (door_ != nullptr && door_->IsBlocking()) {
 		movableBlock_->AddObstacle(door_->GetAABB());
 	}
 
-	// ブロックが右側足場から落ちないための見えない境界。
-	// 床AABBから境界位置を作ることで、ステージ幅を変更しても
-	// 見た目と当たり判定がずれないようにする。
-	const Collision::AABB& rightFloor = floorAABBs_[1];
-	const float floorCenterX = (rightFloor.min.x + rightFloor.max.x) * 0.5f;
-	const float floorCenterZ = (rightFloor.min.z + rightFloor.max.z) * 0.5f;
-	const float floorHalfX = (rightFloor.max.x - rightFloor.min.x) * 0.5f;
-	const float floorHalfZ = (rightFloor.max.z - rightFloor.min.z) * 0.5f;
+	// 紫色電源は箱に対しても実体障害物。押し抜け・引き抜けを禁止する。
+	if (power_ != nullptr) {
+		movableBlock_->AddObstacle(power_->GetAABB());
+	}
+
+	// 箱が開始側の大平台から最後の穴へ落ちないための見えない境界。
+	const Collision::AABB& mainFloor = floorAABBs_[0];
+	const float floorCenterX = (mainFloor.min.x + mainFloor.max.x) * 0.5f;
+	const float floorCenterZ = (mainFloor.min.z + mainFloor.max.z) * 0.5f;
+	const float floorHalfX = (mainFloor.max.x - mainFloor.min.x) * 0.5f;
+	const float floorHalfZ = (mainFloor.max.z - mainFloor.min.z) * 0.5f;
 	constexpr float kBorderHalfThickness = 0.20f;
 
 	movableBlock_->AddObstacle(Collision::MakeAABB(
-		{rightFloor.min.x - kBorderHalfThickness, 1.0f, floorCenterZ},
+		{mainFloor.min.x - kBorderHalfThickness, 1.0f, floorCenterZ},
 		{kBorderHalfThickness, 1.0f, floorHalfZ}));
 	movableBlock_->AddObstacle(Collision::MakeAABB(
-		{rightFloor.max.x + kBorderHalfThickness, 1.0f, floorCenterZ},
+		{mainFloor.max.x + kBorderHalfThickness, 1.0f, floorCenterZ},
 		{kBorderHalfThickness, 1.0f, floorHalfZ}));
 	movableBlock_->AddObstacle(Collision::MakeAABB(
-		{floorCenterX, 1.0f, rightFloor.min.z - kBorderHalfThickness},
+		{floorCenterX, 1.0f, mainFloor.min.z - kBorderHalfThickness},
 		{floorHalfX, 1.0f, kBorderHalfThickness}));
 	movableBlock_->AddObstacle(Collision::MakeAABB(
-		{floorCenterX, 1.0f, rightFloor.max.z + kBorderHalfThickness},
+		{floorCenterX, 1.0f, mainFloor.max.z + kBorderHalfThickness},
 		{floorHalfX, 1.0f, kBorderHalfThickness}));
 }
 
@@ -903,6 +1008,10 @@ void ThirdStageScene::UpdatePlayer() {
 
 	ApplyStageBounds(playerPosition);
 
+	// 右のGOAL島へ着地した後は、着地判定を1フレーム取りこぼしても
+	// 次の接地フレームで確実に右側チェックポイントへ更新する。
+	UpdateSafeRespawnCheckpoint(playerPosition);
+
 	if (playerPosition.y < kFallResetY) {
 		ResetPlayerAfterFall();
 		return;
@@ -955,6 +1064,9 @@ void ThirdStageScene::UpdateSwitch() {
 		Collision::IsOverlap(snapAABB, door_->GetAABB())) {
 		return;
 	}
+	if (power_ != nullptr && Collision::IsOverlap(snapAABB, power_->GetAABB())) {
+		return;
+	}
 
 	// プレイヤーが机关の下側など吸着先のすぐ近くにいる場合は、
 	// 箱をスナップしてプレイヤーへ食い込ませない。少し余裕を持たせる。
@@ -975,7 +1087,6 @@ void ThirdStageScene::UpdateSwitch() {
 	movableBlock_->SnapAndLock(snapPosition);
 
 	switchActivated_ = true;
-	switchColor_.SetColor({1.0f, 0.85f, 0.15f, 1.0f});
 	// 第3关では電源接続も完了するまでドアは開かない。
 }
 
@@ -1073,16 +1184,13 @@ void ThirdStageScene::UpdateAnchorColor() {
 }
 
 Vector3 ThirdStageScene::GetDoorCenter() const {
-    if (door_ == nullptr) {
-        return kDoorPosition_;
-    }
+	if (door_ == nullptr) {
+		return kDoorPosition_;
+	}
 
-    const Collision::AABB doorAABB = door_->GetAABB();
-    return {
-        (doorAABB.min.x + doorAABB.max.x) * 0.5f,
-        (doorAABB.min.y + doorAABB.max.y) * 0.5f,
-        (doorAABB.min.z + doorAABB.max.z) * 0.5f,
-    };
+	// 接続線は当たり判定ではなく、実際に描画されているドア位置へ追従させる。
+	// GetAABB() は開き切るまで閉位置を維持する仕様なので使用しない。
+	return door_->GetCurrentPosition();
 }
 
 void ThirdStageScene::UpdateDeviceConnectionInput() {
@@ -1224,8 +1332,8 @@ void ThirdStageScene::UpdateGoal() {
 		return;
 	}
 
-	// 先にスイッチを作動させ、ドアが完全に開いてからGOALを有効にする。
-	// スウィングで直接GOAL側へ飛び越してもクリアにはならない。
+	// 箱スイッチ + 電源接続 + ドア完全開放のすべてを満たした後だけGOAL有効。
+	// 第3关ではこの後に最後の短いスウィングを成功させる必要がある。
 	if (!switchActivated_ || !deviceConnected_ || !door_->IsOpen()) {
 		return;
 	}
@@ -1239,7 +1347,6 @@ void ThirdStageScene::UpdateGoal() {
 		}
 		playerVelocity_ = {};
 
-		goalColor_.SetColor({1.0f, 0.80f, 0.10f, 1.0f});
 	}
 }
 
@@ -1485,18 +1592,23 @@ bool ThirdStageScene::ResolveFloorLanding(
 		const float previousBottom = previousPosition.y - playerHalfY;
 		const float currentBottom = position.y - playerHalfY;
 
-		const bool wasAboveFloor =
-			previousBottom >= floorTop - kGroundTolerance;
-		const bool reachedFloor =
+		const bool crossedFloorTop =
+			previousBottom >= floorTop - kGroundTolerance &&
 			currentBottom <= floorTop + kGroundTolerance;
 
-		if (wasAboveFloor && reachedFloor) {
+		// 高速落下やアンカー拘束で1フレームだけ床面を越えた場合も、
+		// Player中心がまだ床面より上なら床上へ戻して穿模を防ぐ。
+		const bool shallowPenetrationFromAbove =
+			position.y >= floorTop &&
+			currentBottom < floorTop;
+
+		if (crossedFloorTop || shallowPenetrationFromAbove) {
 			position.y = standingY;
 			playerVelocity_.y = 0.0f;
 
-			// 実際に着地した足場だけを次の復活地点として記録する。
-			safeRespawnPosition_ =
-				(i == 0) ? kLeftRespawnPosition_ : kRightRespawnPosition_;
+			if (i == 1) {
+				safeRespawnPosition_ = kRightRespawnPosition_;
+			}
 
 			return true;
 		}
@@ -1555,57 +1667,80 @@ bool ThirdStageScene::IsSafeRespawnPosition(
 		return false;
 	}
 
+	// 紫色電源の中にも復活しない。
+	if (power_ != nullptr &&
+		Collision::IsOverlap(playerAABB, power_->GetAABB())) {
+		return false;
+	}
+
 	return true;
 }
 
 Vector3 ThirdStageScene::FindSafeRespawnPosition() const {
-	// safeRespawnPosition_ のX符号から、最後に安全着地した足場を判定。
+	// 負のX側の復活点=開始大平台、正のX側=GOAL島。
 	const int floorIndex = safeRespawnPosition_.x < 0.0f ? 0 : 1;
 
-	// まず本来の復活点。その後、同じ足場内だけで周囲を探す。
-	// 右足場では x=8.3 の門より手前側だけを候補にして、
-	// 復活による門抜け・Goalへのショートカットを防ぐ。
 	const Vector3 kCandidateOffsets[] = {
 		{0.0f, 0.0f, 0.0f},
-		{0.0f, 0.0f, 1.5f},
-		{0.0f, 0.0f, -1.5f},
+		{0.0f, 0.0f, 1.4f},
+		{0.0f, 0.0f, -1.4f},
 		{-1.2f, 0.0f, 0.0f},
-		{0.8f, 0.0f, 0.0f},
-		{-1.2f, 0.0f, 1.5f},
-		{-1.2f, 0.0f, -1.5f},
-		{0.8f, 0.0f, 1.5f},
-		{0.8f, 0.0f, -1.5f},
-		{0.0f, 0.0f, 3.0f},
-		{0.0f, 0.0f, -3.0f},
+		{1.2f, 0.0f, 0.0f},
+		{-1.2f, 0.0f, 1.4f},
+		{-1.2f, 0.0f, -1.4f},
+		{1.2f, 0.0f, 1.4f},
+		{1.2f, 0.0f, -1.4f},
+		{0.0f, 0.0f, 2.8f},
+		{0.0f, 0.0f, -2.8f},
 	};
 
 	for (const Vector3& offset : kCandidateOffsets) {
-		Vector3 candidate = {
+		const Vector3 candidate = {
 			safeRespawnPosition_.x + offset.x,
 			safeRespawnPosition_.y,
 			safeRespawnPosition_.z + offset.z,
 		};
-
-		if (floorIndex == 1 && candidate.x > 8.55f) {
-			continue;
-		}
 
 		if (IsSafeRespawnPosition(candidate, floorIndex)) {
 			return candidate;
 		}
 	}
 
-	// 通常は上の候補で必ず見つかる。万一すべて塞がれていた場合は、
-	// その足場のより外側の安全寄り位置を最後の候補にする。
 	const Vector3 fallback =
-		(floorIndex == 0) ? Vector3{-9.0f, 0.6f, 0.0f}
-		                  : Vector3{5.0f, 0.6f, 0.0f};
+		(floorIndex == 0) ? Vector3{-9.4f, 0.6f, -2.0f}
+		                  : Vector3{9.4f, 0.6f, 0.0f};
 
 	if (IsSafeRespawnPosition(fallback, floorIndex)) {
 		return fallback;
 	}
 
 	return safeRespawnPosition_;
+}
+
+void ThirdStageScene::UpdateSafeRespawnCheckpoint(
+    const Vector3& position) {
+
+	if (player_ == nullptr) {
+		return;
+	}
+
+	// 第3关では右側GOAL島が最終チェックポイント。
+	// 一度そこへ安全に接地したら、その後は落下しても開始地点へ戻さない。
+	if (safeRespawnPosition_.x >= 0.0f) {
+		return;
+	}
+
+	if (!HasFloorSupportXZ(position, floorAABBs_[1])) {
+		return;
+	}
+
+	const float standingY =
+		floorAABBs_[1].max.y + player_->GetHalfSize().y;
+
+	if (std::abs(position.y - standingY) <= kGroundTolerance * 2.0f &&
+		playerVelocity_.y <= 0.0f) {
+		safeRespawnPosition_ = kRightRespawnPosition_;
+	}
 }
 
 void ThirdStageScene::ResetPlayerAfterFall() {
@@ -1654,10 +1789,11 @@ void ThirdStageScene::ResetDemo() {
 	player_->Reset(kPlayerStartPosition_);
 
 	switchActivated_ = false;
-	switchColor_.SetColor({0.20f, 0.90f, 0.25f, 1.0f});
+	switchColor_.SetColor({0.95f, 0.20f, 0.20f, 1.0f});
 
 	isClear_ = false;
-	goalColor_.SetColor({0.20f, 0.85f, 0.90f, 1.0f});
+	goalColor_.SetColor({1.0f, 0.85f, 0.15f, 1.0f});
+	interactionPrompt_.ResetAnimation();
 
 	UpdateAnchorColor();
 }

@@ -10,12 +10,13 @@ void LevelSelectScene::Initialize() {
 	audio_ = Audio::GetInstance();
 	cursorSoundHandle_ = audio_->LoadWave("SE/cursor.wav");
 
-	panelModel_ = Model::CreateFromOBJ("cube");
+	panelModel_ = Model::CreateFromOBJ("select_panel");
 	blockIconModel_ = Model::CreateFromOBJ("cubu");
-	sphereModel_ = Model::CreateSphere(12, 12);
+	anchorIconModel_ = Model::CreateFromOBJ("anchor");
+	playerIconModel_ = Model::CreateFromOBJ("PLAYER");
 	ropeModel_ = Model::CreateFromOBJ("cube");
 	floorModel_ = Model::CreateFromOBJ("floorwood");
-	powerIconModel_ = Model::CreateFromOBJ("cube");
+	powerIconModel_ = Model::CreateFromOBJ("power");
 
 	camera_.Initialize();
 	camera_.translation_ = {0.0f, 8.5f, -21.0f};
@@ -28,8 +29,12 @@ void LevelSelectScene::Initialize() {
 
 	InitializeTransform(blockIconTransform_, {-5.5f, 1.2f, 0.0f}, {0.9f, 0.9f, 0.9f});
 	InitializeTransform(anchorIconTransform_, {0.0f, 2.4f, 0.0f}, {0.45f, 0.45f, 0.45f});
-	InitializeTransform(playerIconTransform_, {0.0f, 0.95f, 0.0f}, {0.35f, 0.35f, 0.35f});
-	InitializeTransform(ropeTransform_, {0.0f, 1.65f, 0.0f}, {0.04f, 0.04f, 0.8f});
+
+    InitializeTransform(playerIconTransform_, {0.0f, 0.95f, 0.0f}, {0.35f, 0.35f, 0.35f});
+    playerIconTransform_.rotation_.y = 3.14159265f;
+    playerIconTransform_.UpdateMatarix();
+
+    InitializeTransform(ropeTransform_, {0.0f, 1.65f, 0.0f}, {0.04f, 0.04f, 0.8f});
 	InitializeTransform(powerIconTransform_, {5.5f, 1.25f, 0.0f}, {0.75f, 0.75f, 0.75f});
 	InitializeTransform(floorTransform_, {0.0f, -0.15f, 0.0f}, {9.0f, 0.1f, 5.0f});
 
@@ -44,10 +49,10 @@ void LevelSelectScene::Initialize() {
 	floorColor_.Initialize();
 
 	blockIconColor_.SetColor({0.95f, 0.20f, 0.20f, 1.0f});
-	anchorIconColor_.SetColor({0.20f, 0.85f, 0.35f, 1.0f});
-	playerIconColor_.SetColor({0.20f, 0.70f, 1.0f, 1.0f});
+	anchorIconColor_.SetColor({1.0f, 1.0f, 1.0f, 1.0f});
+	playerIconColor_.SetColor({1.0f, 1.0f, 1.0f, 1.0f});
 	ropeColor_.SetColor({1.0f, 0.90f, 0.20f, 1.0f});
-	powerIconColor_.SetColor({0.65f, 0.25f, 0.95f, 1.0f});
+	powerIconColor_.SetColor({1.0f, 1.0f, 1.0f, 1.0f});
 	floorColor_.SetColor({0.94f, 0.91f, 0.86f, 1.0f});
 
 	selectedIndex_ = 0;
@@ -96,8 +101,9 @@ bool LevelSelectScene::Update() {
 }
 
 void LevelSelectScene::Draw() {
-	if (panelModel_ == nullptr || blockIconModel_ == nullptr || sphereModel_ == nullptr ||
-		ropeModel_ == nullptr || floorModel_ == nullptr || powerIconModel_ == nullptr) {
+	if (panelModel_ == nullptr || blockIconModel_ == nullptr || anchorIconModel_ == nullptr ||
+		playerIconModel_ == nullptr || ropeModel_ == nullptr || floorModel_ == nullptr ||
+		powerIconModel_ == nullptr) {
 		return;
 	}
 
@@ -107,8 +113,8 @@ void LevelSelectScene::Draw() {
 	panelModel_->Draw(thirdPanelTransform_, camera_, &thirdPanelColor_);
 
 	blockIconModel_->Draw(blockIconTransform_, camera_, &blockIconColor_);
-	sphereModel_->Draw(anchorIconTransform_, camera_, &anchorIconColor_);
-	sphereModel_->Draw(playerIconTransform_, camera_, &playerIconColor_);
+	anchorIconModel_->Draw(anchorIconTransform_, camera_, &anchorIconColor_);
+	playerIconModel_->Draw(playerIconTransform_, camera_, &playerIconColor_);
 	ropeModel_->Draw(ropeTransform_, camera_, &ropeColor_);
 	powerIconModel_->Draw(powerIconTransform_, camera_, &powerIconColor_);
 }
@@ -116,14 +122,16 @@ void LevelSelectScene::Draw() {
 void LevelSelectScene::Finalize() {
 	delete panelModel_;
 	delete blockIconModel_;
-	delete sphereModel_;
+	delete anchorIconModel_;
+	delete playerIconModel_;
 	delete ropeModel_;
 	delete floorModel_;
 	delete powerIconModel_;
 
 	panelModel_ = nullptr;
 	blockIconModel_ = nullptr;
-	sphereModel_ = nullptr;
+	anchorIconModel_ = nullptr;
+	playerIconModel_ = nullptr;
 	ropeModel_ = nullptr;
 	floorModel_ = nullptr;
 	powerIconModel_ = nullptr;
@@ -141,7 +149,7 @@ void LevelSelectScene::InitializeTransform(
 }
 
 void LevelSelectScene::UpdateSelectionColor() {
-	const Vector4 normal1 = {0.20f, 0.45f, 0.85f, 1.0f};
+	const Vector4 normal1 = {0.85f, 0.20f, 0.20f, 1.0f};
 	const Vector4 normal2 = {0.20f, 0.60f, 0.35f, 1.0f};
 	const Vector4 normal3 = {0.55f, 0.25f, 0.75f, 1.0f};
 	const Vector4 selected = {1.0f, 0.80f, 0.10f, 1.0f};

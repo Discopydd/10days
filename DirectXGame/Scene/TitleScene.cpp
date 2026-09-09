@@ -7,22 +7,22 @@ void TitleScene::Initialize() {
 	audio_ = Audio::GetInstance();
 	decisionSoundHandle_ = audio_->LoadWave("SE/cursor.wav");
 
-	// 文字入りの一時テクスチャを貼ったcubeを画面正面に表示する。
-	titleModel_ = Model::CreateFromOBJ("title");
-	instructionModel_ = Model::CreateFromOBJ("instruction");
+	const uint32_t titleTextureHandle =
+		TextureManager::Load("title/title.png");
+	const uint32_t instructionTextureHandle =
+		TextureManager::Load("instruction/instruction.png");
 
-	camera_.Initialize();
-	camera_.translation_ = {0.0f, 0.0f, -10.0f};
-	camera_.rotation_ = {0.0f, 0.0f, 0.0f};
-	camera_.UpdateMatrix();
+	titleSprite_ = Sprite::Create(titleTextureHandle, {0.0f, 0.0f});
+	instructionSprite_ =
+		Sprite::Create(instructionTextureHandle, {0.0f, 0.0f});
 
-	InitializeTransform(
-		panelTransform_,
-		{0.0f, 0.0f, 0.0f},
-		{5.6f, 3.15f, 0.05f});
-
-	panelColor_.Initialize();
-	panelColor_.SetColor({1.0f, 1.0f, 1.0f, 1.0f});
+	// 画像をウィンドウ全体に描画する。
+	if (titleSprite_ != nullptr) {
+		titleSprite_->SetSize({1280.0f, 720.0f});
+	}
+	if (instructionSprite_ != nullptr) {
+		instructionSprite_->SetSize({1280.0f, 720.0f});
+	}
 
 	Reset();
 }
@@ -48,22 +48,22 @@ bool TitleScene::Update() {
 }
 
 void TitleScene::Draw() {
-	Model* model =
-		page_ == Page::kTitle ? titleModel_ : instructionModel_;
+	Sprite* sprite =
+		page_ == Page::kTitle ? titleSprite_ : instructionSprite_;
 
-	if (model == nullptr) {
+	if (sprite == nullptr) {
 		return;
 	}
 
-	model->Draw(panelTransform_, camera_, &panelColor_);
+	sprite->Draw();
 }
 
 void TitleScene::Finalize() {
-	delete titleModel_;
-	delete instructionModel_;
+	delete titleSprite_;
+	delete instructionSprite_;
 
-	titleModel_ = nullptr;
-	instructionModel_ = nullptr;
+	titleSprite_ = nullptr;
+	instructionSprite_ = nullptr;
 }
 
 SceneType TitleScene::GetRequestedScene() const {
@@ -73,15 +73,4 @@ SceneType TitleScene::GetRequestedScene() const {
 void TitleScene::Reset() {
 	page_ = Page::kTitle;
 	requestedScene_ = SceneType::kNone;
-}
-
-void TitleScene::InitializeTransform(
-    WorldTransform& transform,
-    const Vector3& position,
-    const Vector3& scale) {
-
-	transform.Initialize();
-	transform.translation_ = position;
-	transform.scale_ = scale;
-	transform.UpdateMatarix();
 }

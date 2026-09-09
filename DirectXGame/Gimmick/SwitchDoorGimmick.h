@@ -40,6 +40,10 @@ public:
 	// 現在の当たり判定を取得する
 	Collision::AABB GetAABB() const;
 
+	// 描画中のドア本体の現在位置を取得する。
+	// GetAABB() は開き切るまで閉位置を返すため、演出追従用はこちらを使う。
+	const KamataEngine::Vector3& GetCurrentPosition() const;
+
 private:
 	KamataEngine::Model* model_ = nullptr;
 	KamataEngine::WorldTransform worldTransform_;

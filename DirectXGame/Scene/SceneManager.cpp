@@ -1,42 +1,83 @@
 #include "SceneManager.h"
 
+#include <KamataEngine.h>
+
 #include "GameScene.h"
 #include "TitleScene.h"
 #include "LevelSelectScene.h"
 #include "../Demo/SwingDemoScene.h"
 #include "../Demo/ThirdStageScene.h"
 
+using namespace KamataEngine;
+
+namespace {
+constexpr float kBgmVolume = 0.35f;
+constexpr float kInGameBgmVolume = 0.2f;
+}
+
 void SceneManager::Initialize() {
-	audio_ = KamataEngine::Audio::GetInstance();
+	input_ = Input::GetInstance();
+	audio_ = Audio::GetInstance();
 	tabSoundHandle_ = audio_->LoadWave("SE/cursor.wav");
+	bgmSoundHandle_ = audio_->LoadWave("BGM/MusMus-BGM-173.wav");
+	bgmVoiceHandle_ = audio_->PlayWave(bgmSoundHandle_, true, kBgmVolume);
 
-	howToTextureHandle_ = KamataEngine::TextureManager::Load("Howto/Howto.png");
-	howToSprite_ = KamataEngine::Sprite::Create(
-		howToTextureHandle_,
-		{0.0f, 0.0f});
-	howToSprite_->SetSize({
-		static_cast<float>(KamataEngine::WinApp::kWindowWidth),
-		static_cast<float>(KamataEngine::WinApp::kWindowHeight)});
+	const uint32_t howToTextureHandle =
+		TextureManager::Load("instruction/instruction.png");
+	howToSprite_ = Sprite::Create(howToTextureHandle, {0.0f, 0.0f});
+	if (howToSprite_ != nullptr) {
+		howToSprite_->SetSize({1280.0f, 720.0f});
+	}
 
-	menuTextureHandle_ = KamataEngine::TextureManager::Load("Howto/Menu.png");
-	menuSprite_ = KamataEngine::Sprite::Create(
-		menuTextureHandle_,
-		{16.0f, 16.0f});
-	menuSprite_->SetSize({240.0f, 80.0f});
+	spacePromptSprite_ = Sprite::Create(
+		TextureManager::Load("ui/space_prompt.png"), {460.0f, 520.0f});
+	if (spacePromptSprite_ != nullptr) {
+		spacePromptSprite_->SetSize({360.0f, 120.0f});
+	}
 
 	ChangeScene(SceneType::kTitle);
+
+	backgroundSprite_ = Sprite::Create(
+		TextureManager::Load("ui/background.png"), {0.0f, 0.0f});
+	if (backgroundSprite_ != nullptr) {
+		backgroundSprite_->SetSize({1280.0f, 720.0f});
+	}
+	clearSprite_ = Sprite::Create(
+		TextureManager::Load("ui/clear.png"), {0.0f, 0.0f});
+	if (clearSprite_ != nullptr) {
+		clearSprite_->SetSize({1280.0f, 720.0f});
+		// クリア画像の不透明度。背後に通過時のステージを残す。
+		constexpr float kClearOpacity = 1.0f;
+		clearSprite_->SetColor({1.0f, 1.0f, 1.0f, kClearOpacity});
+	}
 }
 
 bool SceneManager::Update() {
-	const bool isGameScene =
-		currentScene_ == SceneType::kGame ||
-		currentScene_ == SceneType::kSwing ||
-		currentScene_ == SceneType::kThird;
-	if (!isGameScene) {
-		isHowToVisible_ = false;
-	} else if (KamataEngine::Input::GetInstance()->TriggerKey(DIK_TAB)) {
+	if (isClearVisible_) {
+		// クリア時に押していたSPACEでは進めず、押し直しを待つ。
+		if (input_ != nullptr) {
+			if (!input_->PushKey(DIK_SPACE)) {
+				clearSpaceReady_ = true;
+			}
+			if (clearSpaceReady_ && input_->TriggerKey(DIK_SPACE)) {
+				ChangeScene(SceneType::kLevelSelect);
+			}
+		}
+		return true;
+	}
+
+	if (IsGameplayScene() && input_ != nullptr &&
+		input_->TriggerKey(DIK_TAB)) {
 		isHowToVisible_ = !isHowToVisible_;
-		audio_->PlayWave(tabSoundHandle_, false, 0.75f);
+		if (audio_ != nullptr) {
+			audio_->PlayWave(tabSoundHandle_, false, 0.75f);
+		}
+		return true;
+	}
+
+	// 説明画面の表示中はゲームを一時停止する。
+	if (isHowToVisible_) {
+		return true;
 	}
 
 	switch (currentScene_) {
@@ -60,7 +101,7 @@ bool SceneManager::Update() {
 		}
 
 		if (gameScene_->IsClear()) {
-			ChangeScene(SceneType::kLevelSelect);
+			ShowClearScreen();
 		}
 		break;
 	}
@@ -85,7 +126,7 @@ bool SceneManager::Update() {
 		}
 
 		if (swingScene_->IsClear()) {
-			ChangeScene(SceneType::kLevelSelect);
+			ShowClearScreen();
 		}
 		break;
 	}
@@ -96,7 +137,7 @@ bool SceneManager::Update() {
 		}
 
 		if (thirdScene_->IsClear()) {
-			ChangeScene(SceneType::kLevelSelect);
+			ShowClearScreen();
 		}
 		break;
 	}
@@ -112,9 +153,6 @@ bool SceneManager::Update() {
 void SceneManager::Draw() {
 	switch (currentScene_) {
 	case SceneType::kTitle:
-		if (titleScene_ != nullptr) {
-			titleScene_->Draw();
-		}
 		break;
 
 	case SceneType::kGame:
@@ -147,38 +185,65 @@ void SceneManager::Draw() {
 	}
 }
 
-void SceneManager::DrawUI() {
-	const bool isGameScene =
-		currentScene_ == SceneType::kGame ||
-		currentScene_ == SceneType::kSwing ||
-		currentScene_ == SceneType::kThird;
-	if (isGameScene && menuSprite_ != nullptr) {
-		menuSprite_->Draw();
+void SceneManager::DrawBackground() {
+	if ((IsGameplayScene() || currentScene_ == SceneType::kLevelSelect) &&
+		backgroundSprite_ != nullptr) {
+		backgroundSprite_->Draw();
+	}
+}
+
+void SceneManager::DrawSprite() {
+	if (currentScene_ == SceneType::kTitle && titleScene_ != nullptr) {
+		titleScene_->Draw();
 	}
 
 	if (isHowToVisible_ && howToSprite_ != nullptr) {
 		howToSprite_->Draw();
 	}
+	if (isClearVisible_ && clearSprite_ != nullptr) {
+		clearSprite_->Draw();
+	}
+
+	const bool showTitlePrompt = currentScene_ == SceneType::kTitle &&
+		titleScene_ != nullptr && titleScene_->IsTitlePage();
+	if ((showTitlePrompt || isClearVisible_) && spacePromptSprite_ != nullptr) {
+		// 半透明のCLEAR画像より後に、不透明なキーを描画する。
+		spacePromptSprite_->Draw();
+	}
 }
 
 void SceneManager::Finalize() {
 	DeleteCurrentScene();
+	if (audio_ != nullptr) {
+		audio_->StopWave(bgmVoiceHandle_);
+	}
 
 	delete howToSprite_;
 	howToSprite_ = nullptr;
-
-	KamataEngine::TextureManager::Unload(howToTextureHandle_);
-	howToTextureHandle_ = 0;
-
-	delete menuSprite_;
-	menuSprite_ = nullptr;
-
-	KamataEngine::TextureManager::Unload(menuTextureHandle_);
-	menuTextureHandle_ = 0;
+	delete backgroundSprite_;
+	backgroundSprite_ = nullptr;
+	delete clearSprite_;
+	clearSprite_ = nullptr;
+	delete spacePromptSprite_;
+	spacePromptSprite_ = nullptr;
+	isHowToVisible_ = false;
+	isClearVisible_ = false;
+	clearSpaceReady_ = false;
+	input_ = nullptr;
+	audio_ = nullptr;
+	bgmVoiceHandle_ = 0;
 }
 
 void SceneManager::ChangeScene(SceneType nextScene) {
+	ResetSpacePrompt();
+	isHowToVisible_ = false;
+	isClearVisible_ = false;
+	clearSpaceReady_ = false;
 	currentScene_ = nextScene;
+	if (audio_ != nullptr) {
+		audio_->SetVolume(
+			bgmVoiceHandle_, IsGameplayScene() ? kInGameBgmVolume : kBgmVolume);
+	}
 
 	switch (currentScene_) {
 	case SceneType::kTitle:
@@ -263,4 +328,23 @@ void SceneManager::DeleteCurrentScene() {
 	}
 
 	currentScene_ = SceneType::kNone;
+}
+
+bool SceneManager::IsGameplayScene() const {
+	return currentScene_ == SceneType::kGame ||
+		currentScene_ == SceneType::kSwing ||
+		currentScene_ == SceneType::kThird;
+}
+
+void SceneManager::ShowClearScreen() {
+	ResetSpacePrompt();
+	isClearVisible_ = true;
+	isHowToVisible_ = false;
+	clearSpaceReady_ = input_ != nullptr && !input_->PushKey(DIK_SPACE);
+}
+
+void SceneManager::ResetSpacePrompt() {
+	if (spacePromptSprite_ != nullptr) {
+		spacePromptSprite_->SetPosition({460.0f, 520.0f});
+	}
 }

@@ -16,7 +16,7 @@ void PowerGimmick::Initialize(
     halfSize_ = scale;
 
     objectColor_.Initialize();
-    objectColor_.SetColor({0.60f, 0.20f, 0.90f, 1.0f});
+    objectColor_.SetColor({1.0f, 1.0f, 1.0f, 1.0f});
     isSelected_ = false;
 }
 
@@ -37,9 +37,9 @@ void PowerGimmick::Reset(const Vector3& position) {
 void PowerGimmick::SetSelected(bool selected) {
     isSelected_ = selected;
     if (isSelected_) {
-        objectColor_.SetColor({0.95f, 0.65f, 1.0f, 1.0f});
+        objectColor_.SetColor({1.0f, 0.85f, 1.0f, 1.0f});
     } else {
-        objectColor_.SetColor({0.60f, 0.20f, 0.90f, 1.0f});
+        objectColor_.SetColor({1.0f, 1.0f, 1.0f, 1.0f});
     }
 }
 
