@@ -76,3 +76,12 @@ bool SwitchDoorGimmick::IsOpen() const {
 Collision::AABB SwitchDoorGimmick::GetAABB() const {
 	return Collision::MakeAABB(worldTransform_.translation_, halfSize_);
 }
+
+// ----- 新規追加実装 -----
+void SwitchDoorGimmick::SetPowered(bool powered) {
+	if (powered) {
+		Open();
+	} else {
+		Reset();
+	}
+}

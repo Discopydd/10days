@@ -16,6 +16,8 @@ void GameScene::Initialize() {
 		movableBlocks_[i] = new MovableBlockGimmick();
 	}
 
+	power_ = new PowerGimmick();
+
 	// --------------------------------------------------------
 	// モデル
 	// --------------------------------------------------------
@@ -76,6 +78,14 @@ void GameScene::Initialize() {
 		4.0f);
 
 	// --------------------------------------------------------
+	// 電源（新規）
+	// --------------------------------------------------------
+	power_->Initialize(
+		switchModel_, // 既存のcubeモデルを使う（見た目は紫）
+		kPowerPosition_,
+		kPowerScale_);
+
+	// --------------------------------------------------------
 	// GOAL
 	// --------------------------------------------------------
 	InitializeTransform(
@@ -103,10 +113,6 @@ void GameScene::Initialize() {
 
 	// --------------------------------------------------------
 	// 壁
-	// 0:左外壁 / 1:右外壁 / 2:手前外壁 / 3:奥外壁
-	// 4:中央左壁 / 5:中央右壁
-	//
-	// 中央壁はx=-1.5～1.5を空け、そこをドアで塞ぐ。
 	// --------------------------------------------------------
 	const Vector3 wallPositions[kWallCount] = {
 		{-7.5f, 1.0f, 0.0f},
@@ -151,17 +157,27 @@ void GameScene::Initialize() {
 	ropeColor_.Initialize();
 	ropeColor_.SetColor({1.0f, 0.90f, 0.20f, 1.0f});
 
+	InitializeTransform(
+		deviceRopeWorldTransform_,
+		{0.0f, 1.0f, 0.0f},
+		{0.04f, 0.04f, 1.0f});
+
+	deviceRopeColor_.Initialize();
+	deviceRopeColor_.SetColor({0.95f, 0.45f, 0.95f, 1.0f}); // 電源間は薄紫系
+
 	connectionState_ = ConnectionState::kIdle;
 	ropeShootProgress_ = 0.0f;
 	activeBlockIndex_ = -1;
 	switchActivated_ = false;
 	isClear_ = false;
+
+	deviceSelecting_ = false;
+	deviceConnected_ = false;
+	selectedDeviceType_ = DeviceType::None;
 }
 
 bool GameScene::Update() {
-	// --------------------------------------------------------
 	// R : ステージを最初からやり直す
-	// --------------------------------------------------------
 	if (input_->TriggerKey(DIK_R)) {
 		ResetGame();
 		return true;
@@ -174,6 +190,9 @@ bool GameScene::Update() {
 	if (isClear_) {
 		return true;
 	}
+
+	// 追加：デバイス間接続用入力（Fキー）
+	UpdateDeviceConnectionInput();
 
 	UpdateConnectionInput();
 
@@ -224,6 +243,7 @@ bool GameScene::Update() {
 	}
 
 	UpdateRope();
+	UpdateDeviceRope();
 
 	return true;
 }
@@ -266,6 +286,9 @@ void GameScene::Draw() {
 	// ドア
 	door_->Draw(*camera_);
 
+	// 電源（新規）
+	power_->Draw(*camera_);
+
 	// Player
 	player_->Draw(*camera_);
 
@@ -274,13 +297,21 @@ void GameScene::Draw() {
 		movableBlocks_[i]->Draw(*camera_);
 	}
 
-	// 接続動作中だけ糸を描画する
+	// 接続動作中だけ糸を描画する（Player <-> Block）
 	if (connectionState_ != ConnectionState::kIdle &&
 		activeBlockIndex_ >= 0) {
 		ropeModel_->Draw(
 			ropeWorldTransform_,
 			*camera_,
 			&ropeColor_);
+	}
+
+	// 電源と装置の接続糸（存在すれば描画）
+	if (deviceSelecting_ || deviceConnected_) {
+		ropeModel_->Draw(
+			deviceRopeWorldTransform_,
+			*camera_,
+			&deviceRopeColor_);
 	}
 }
 
@@ -301,6 +332,9 @@ void GameScene::Finalize() {
 
 	delete camera_;
 	camera_ = nullptr;
+
+	delete power_;
+	power_ = nullptr;
 
 	delete blockModel_;
 	delete switchModel_;
@@ -1047,4 +1081,161 @@ void GameScene::ResetGame() {
 
 	isClear_ = false;
 	goalColor_.SetColor({0.20f, 0.85f, 0.90f, 1.0f});
+
+	// 電源と接続状態リセット
+	deviceSelecting_ = false;
+	deviceConnected_ = false;
+	selectedDeviceType_ = DeviceType::None;
+	power_->Reset(kPowerPosition_);
+	door_->Reset();
+}
+
+void GameScene::UpdateDeviceConnectionInput() {
+	// Fキーでデバイス選択 / 接続 / 解除
+	if (!input_->TriggerKey(DIK_F)) {
+		return;
+	}
+
+	// 既に接続が確立している場合：Fで切断（ドアの電源を切る）
+	if (deviceConnected_) {
+		deviceConnected_ = false;
+		// 電源 -> ドア の接続と仮定してドアをリセット（給電解除）
+		door_->SetPowered(false);
+		return;
+	}
+
+	// 1) まだ1つも選んでいない：近くの電源またはドアを選択する
+	if (!deviceSelecting_) {
+		// 電源に近ければ電源を選択
+		if (Collision::Distance(player_->GetPosition(), power_->GetPosition()) <= kConnectDistance) {
+			deviceSelecting_ = true;
+			selectedDeviceType_ = DeviceType::Power;
+			power_->SetSelected(true);
+			return;
+		}
+
+		// ドアに近ければドアを選択
+		const Collision::AABB doorAABB = door_->GetAABB();
+		// ここはドア中心との距離で簡易判定
+		const Vector3 doorPos = { (doorAABB.min.x + doorAABB.max.x) * 0.5f,
+								  (doorAABB.min.y + doorAABB.max.y) * 0.5f,
+								  (doorAABB.min.z + doorAABB.max.z) * 0.5f };
+		if (Collision::Distance(player_->GetPosition(), doorPos) <= kConnectDistance) {
+			deviceSelecting_ = true;
+			selectedDeviceType_ = DeviceType::Door;
+			// ドアには選択表示がないのでここでは何もしない
+			return;
+		}
+
+		// 何も選べなかった
+		return;
+	}
+
+	// 2) 既に1つ選んでいる：2つ目を選んで接続を確立する
+	if (deviceSelecting_) {
+		if (selectedDeviceType_ == DeviceType::Power) {
+			// 2つ目がドアなら接続成立
+			const Collision::AABB doorAABB = door_->GetAABB();
+			const Vector3 doorPos = { (doorAABB.min.x + doorAABB.max.x) * 0.5f,
+									  (doorAABB.min.y + doorAABB.max.y) * 0.5f,
+									  (doorAABB.min.z + doorAABB.max.z) * 0.5f };
+			if (Collision::Distance(player_->GetPosition(), doorPos) <= kConnectDistance) {
+				// 接続成立：電源からドアへ給電
+				deviceConnected_ = true;
+				deviceSelecting_ = false;
+				selectedDeviceType_ = DeviceType::None;
+				power_->SetSelected(false);
+				door_->SetPowered(true);
+				return;
+			}
+		} else if (selectedDeviceType_ == DeviceType::Door) {
+			// 2つ目が電源なら接続成立
+			if (Collision::Distance(player_->GetPosition(), power_->GetPosition()) <= kConnectDistance) {
+				deviceConnected_ = true;
+				deviceSelecting_ = false;
+				selectedDeviceType_ = DeviceType::None;
+				door_->SetPowered(true);
+				return;
+			}
+		}
+
+		// 2つ目が見つからない/遠い場合は選択解除
+		deviceSelecting_ = false;
+		selectedDeviceType_ = DeviceType::None;
+		power_->SetSelected(false);
+	}
+}
+
+void GameScene::UpdateDeviceRope() {
+	// 接続中（両端確定）なら電源 <-> ドア間の糸を描画
+	if (deviceConnected_) {
+		const Vector3 start = power_->GetPosition();
+		const Collision::AABB doorAABB = door_->GetAABB();
+		const Vector3 end = {
+			(doorAABB.min.x + doorAABB.max.x) * 0.5f,
+			(doorAABB.min.y + doorAABB.max.y) * 0.5f,
+			(doorAABB.min.z + doorAABB.max.z) * 0.5f,
+		};
+		SetDeviceRopeTransform(start, end);
+		return;
+	}
+
+	// 選択中は選択対象 <-> Player の糸を描画して接続先へ誘導する
+	if (deviceSelecting_) {
+		if (selectedDeviceType_ == DeviceType::Power) {
+			const Vector3 start = power_->GetPosition();
+			const Vector3 end = player_->GetPosition();
+			SetDeviceRopeTransform(start, end);
+		} else if (selectedDeviceType_ == DeviceType::Door) {
+			const Collision::AABB doorAABB = door_->GetAABB();
+			const Vector3 start = {
+				(doorAABB.min.x + doorAABB.max.x) * 0.5f,
+				(doorAABB.min.y + doorAABB.max.y) * 0.5f,
+				(doorAABB.min.z + doorAABB.max.z) * 0.5f,
+			};
+			const Vector3 end = player_->GetPosition();
+			SetDeviceRopeTransform(start, end);
+		}
+	}
+}
+
+void GameScene::SetDeviceRopeTransform(
+    const Vector3& start,
+    const Vector3& end) {
+
+	const Vector3 diff = {
+		end.x - start.x,
+		end.y - start.y,
+		end.z - start.z,
+	};
+
+	const float lengthXZ = std::sqrt(
+		diff.x * diff.x + diff.z * diff.z);
+
+	const float length = std::sqrt(
+		diff.x * diff.x +
+		diff.y * diff.y +
+		diff.z * diff.z);
+
+	deviceRopeWorldTransform_.translation_ = {
+		(start.x + end.x) * 0.5f,
+		(start.y + end.y) * 0.5f,
+		(start.z + end.z) * 0.5f,
+	};
+
+	deviceRopeWorldTransform_.scale_ = {
+		0.04f,
+		0.04f,
+		(std::max)(length * 0.5f, 0.001f),
+	};
+
+	deviceRopeWorldTransform_.rotation_.y =
+		std::atan2(diff.x, diff.z);
+
+	deviceRopeWorldTransform_.rotation_.x =
+		-std::atan2(
+			diff.y,
+			(std::max)(lengthXZ, 0.0001f));
+
+	deviceRopeWorldTransform_.UpdateMatarix();
 }

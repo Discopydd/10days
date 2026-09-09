@@ -5,6 +5,7 @@
 #include "../Common/Collision.h"
 #include "../Gimmick/MovableBlockGimmick.h"
 #include "../Gimmick/SwitchDoorGimmick.h"
+#include "../Gimmick/PowerGimmick.h"
 #include "../Player/Player.h"
 
 // ============================================================
@@ -77,7 +78,7 @@ private:
 	void ResolvePlayerBlockOverlap(int blockIndex);
 
 	// --------------------------------------------------------
-	// 接続・糸
+	// 接続・糸（Player <-> Block）
 	// --------------------------------------------------------
 	void UpdateConnectionInput();
 	void UpdateRopeShot();
@@ -92,6 +93,13 @@ private:
 	void SetRopeTransform(
 	    const KamataEngine::Vector3& start,
 	    const KamataEngine::Vector3& end);
+
+	// --------------------------------------------------------
+	// デバイス間接続（Power <-> Device）
+	// --------------------------------------------------------
+	void UpdateDeviceConnectionInput(); // Fキーで電源/装置を選択して接続
+	void UpdateDeviceRope();
+	void SetDeviceRopeTransform(const KamataEngine::Vector3& start, const KamataEngine::Vector3& end);
 
 	// --------------------------------------------------------
 	// ステージギミック
@@ -138,6 +146,20 @@ private:
 	SwitchDoorGimmick* door_ = nullptr;
 
 	// --------------------------------------------------------
+	// 電源（新規）
+	// --------------------------------------------------------
+	PowerGimmick* power_ = nullptr;
+	// 電源の設置位置（ステージ定数）
+	const KamataEngine::Vector3 kPowerPosition_ = {-5.0f, 1.0f, -4.0f};
+	const KamataEngine::Vector3 kPowerScale_ = {0.8f, 0.8f, 0.8f};
+
+	// デバイス接続状態
+	bool deviceSelecting_ = false; // 1つ目選択済みか
+	bool deviceConnected_ = false; // 接続確立済みか
+	enum class DeviceType { None, Power, Door };
+	DeviceType selectedDeviceType_ = DeviceType::None;
+
+	// --------------------------------------------------------
 	// GOAL
 	// --------------------------------------------------------
 	KamataEngine::WorldTransform goalWorldTransform_;
@@ -160,12 +182,16 @@ private:
 	KamataEngine::ObjectColor wallColor_;
 
 	// --------------------------------------------------------
-	// 糸
+	// 糸（Player <-> Block）
 	// --------------------------------------------------------
 	KamataEngine::WorldTransform ropeWorldTransform_;
 	KamataEngine::ObjectColor ropeColor_;
 	ConnectionState connectionState_ = ConnectionState::kIdle;
 	float ropeShootProgress_ = 0.0f;
+
+	// デバイス接続用の糸（Power <-> Device）
+	KamataEngine::WorldTransform deviceRopeWorldTransform_;
+	KamataEngine::ObjectColor deviceRopeColor_;
 
 	// --------------------------------------------------------
 	// 定数

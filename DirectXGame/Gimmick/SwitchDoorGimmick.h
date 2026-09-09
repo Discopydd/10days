@@ -40,6 +40,10 @@ public:
 	// 現在の当たり判定を取得する
 	Collision::AABB GetAABB() const;
 
+	// ----- 新規追加 -----
+	// 外部から「給電」されたら装置を作動（給電:true -> Open / 給電:false -> Reset）
+	void SetPowered(bool powered);
+
 private:
 	KamataEngine::Model* model_ = nullptr;
 	KamataEngine::WorldTransform worldTransform_;
