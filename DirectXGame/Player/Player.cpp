@@ -208,7 +208,7 @@ void Player::SetConnectionColor(ConnectionColor color) {
 	switch (color) {
 	case ConnectionColor::kRed:
 		// プレイヤーの青緑色テクスチャと照明で暗くならないよう、純赤を強めに乗せる。
-		objectColor_.SetColor({2.0f, 0.0f, 0.0f, 1.0f});
+		objectColor_.SetColor({4.0f, 0.0f, 0.0f, 1.0f});
 		break;
 
 	case ConnectionColor::kGreen:
